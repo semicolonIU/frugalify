@@ -20,10 +20,14 @@ html.dark {
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  font-family: var(--font-plus-jakarta), 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   overflow-x: hidden;
   background-attachment: fixed;
   transition: background-color 0.3s ease, color 0.3s ease;
+  -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.015em;
 }
 
 html.dark body {
@@ -125,4 +129,28 @@ html.light ::-webkit-scrollbar-thumb {
 
 .animate-pulse-ring {
   animation: pulse-ring 2s infinite ease-in-out;
+}
+
+/* Mobile Typography Optimization */
+@media (max-width: 640px) {
+  h1, h2, h3, h4, h5, h6 {
+    letter-spacing: -0.025em;
+  }
+
+  p, span, label, input, select, button {
+    line-height: 1.4;
+  }
+
+  /* Prevent text clipping and awkward word wraps on small screens */
+  .truncate-mobile {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Currency & Numeric Figure Readability */
+  .font-mono, .tracking-tight {
+    font-feature-settings: "tnum" 1, "cv05" 1;
+    letter-spacing: -0.035em;
+  }
 }
