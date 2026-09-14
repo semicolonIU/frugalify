@@ -239,8 +239,6 @@ export async function syncSaveAppwriteTransaction(
     return { success: false, error: 'Appwrite tidak terkonfigurasi' };
   }
 
-  const docId = cleanAppwriteDocId(tx.id);
-  
   const fullPayload: any = {
     type: tx.type,
     title: tx.title,
@@ -259,14 +257,22 @@ export async function syncSaveAppwriteTransaction(
   if (userId) fullPayload.userId = userId;
 
   try {
-    try {
-      await databases.updateDocument(APPWRITE_DATABASE_ID, COLLECTIONS.TRANSACTIONS, docId, fullPayload);
-    } catch {
-      await databases.createDocument(APPWRITE_DATABASE_ID, COLLECTIONS.TRANSACTIONS, docId, fullPayload);
+    if (tx.id && !tx.id.startsWith('tx-')) {
+      try {
+        await databases.updateDocument(APPWRITE_DATABASE_ID, COLLECTIONS.TRANSACTIONS, tx.id, fullPayload);
+        return { success: true };
+      } catch {}
     }
+
+    await databases.createDocument(
+      APPWRITE_DATABASE_ID,
+      COLLECTIONS.TRANSACTIONS,
+      ID.unique(),
+      fullPayload
+    );
     return { success: true };
   } catch (err1: any) {
-    console.warn('Full payload save failed, trying minimal core payload:', err1);
+    console.warn('Full payload transaction save failed, trying minimal core payload:', err1);
 
     const corePayload: any = {
       type: tx.type,
@@ -278,15 +284,17 @@ export async function syncSaveAppwriteTransaction(
     };
 
     try {
-      try {
-        await databases.updateDocument(APPWRITE_DATABASE_ID, COLLECTIONS.TRANSACTIONS, docId, corePayload);
-      } catch {
-        await databases.createDocument(APPWRITE_DATABASE_ID, COLLECTIONS.TRANSACTIONS, docId, corePayload);
-      }
+      await databases.createDocument(
+        APPWRITE_DATABASE_ID,
+        COLLECTIONS.TRANSACTIONS,
+        ID.unique(),
+        corePayload
+      );
       return { success: true };
     } catch (err2: any) {
       console.error('Appwrite saveTransaction error:', err2);
-      return { success: false, error: err2.message || String(err2) };
+      const msg = err2?.message || String(err2);
+      return { success: false, error: msg };
     }
   }
 }
@@ -306,7 +314,7 @@ export async function syncDeleteAppwriteTransaction(id: string): Promise<{ succe
     return { success: true };
   } catch (err: any) {
     console.warn('Appwrite deleteTransaction error:', err);
-    return { success: false, error: err.message || String(err) };
+    return { success: false, error: err?.message || String(err) };
   }
 }
 
@@ -357,7 +365,6 @@ export async function syncSaveAppwriteInvestments(
   if (!databases || !isAppwriteConfigured) return { success: false, error: 'Appwrite tidak terkonfigurasi' };
   try {
     for (const asset of assets) {
-      const docId = cleanAppwriteDocId(asset.id);
       const payload: any = {
         assetClass: asset.assetClass,
         ticker: asset.ticker,
@@ -374,25 +381,19 @@ export async function syncSaveAppwriteInvestments(
       if (userId) payload.userId = userId;
 
       try {
-        await databases.updateDocument(
-          APPWRITE_DATABASE_ID,
-          COLLECTIONS.INVESTMENTS,
-          docId,
-          payload
-        );
+        if (asset.id && !asset.id.startsWith('inv-')) {
+          await databases.updateDocument(APPWRITE_DATABASE_ID, COLLECTIONS.INVESTMENTS, asset.id, payload);
+        } else {
+          await databases.createDocument(APPWRITE_DATABASE_ID, COLLECTIONS.INVESTMENTS, ID.unique(), payload);
+        }
       } catch {
-        await databases.createDocument(
-          APPWRITE_DATABASE_ID,
-          COLLECTIONS.INVESTMENTS,
-          docId,
-          payload
-        );
+        await databases.createDocument(APPWRITE_DATABASE_ID, COLLECTIONS.INVESTMENTS, ID.unique(), payload);
       }
     }
     return { success: true };
   } catch (err: any) {
     console.warn('Appwrite syncSaveInvestments error:', err);
-    return { success: false, error: err.message || String(err) };
+    return { success: false, error: err?.message || String(err) };
   }
 }
 
@@ -462,7 +463,7 @@ export async function syncSaveAppwriteSettings(
       return { success: true };
     } catch (err2: any) {
       console.error('Appwrite syncSaveSettings error:', err2);
-      return { success: false, error: err2.message || String(err2) };
+      return { success: false, error: err2?.message || String(err2) };
     }
   }
 }
