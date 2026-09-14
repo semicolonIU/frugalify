@@ -82,11 +82,12 @@ export const Header: React.FC<HeaderProps> = ({
                   <span className="hidden sm:block max-w-[100px] truncate text-xs font-bold text-slate-800 dark:text-slate-200">{currentUser.name}</span>
                 </button>
 
-                {/* User Dropdown — right-0 di desktop, di mobile pakai right-0 juga agar tidak keluar layar */}
+                {/* User Dropdown — fixed agar tidak terpotong di layar kecil */}
                 {showUserDropdown && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setShowUserDropdown(false)} />
-                    <div className="absolute right-0 top-full mt-2 w-56 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl shadow-slate-900/20 z-50 overflow-hidden">
+                    {/* Gunakan fixed + right-3 top-14 agar selalu di dalam viewport */}
+                    <div className="fixed right-3 top-14 w-56 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl shadow-slate-900/20 z-50 overflow-hidden">
                       {/* Header info user */}
                       <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 border-b border-slate-100 dark:border-slate-800">
                         <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-500 text-white flex items-center justify-center text-base font-black uppercase shrink-0 shadow-md shadow-emerald-500/30">
