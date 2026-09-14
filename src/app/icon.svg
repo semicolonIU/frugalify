@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981"/>
+      <stop offset="50%" stop-color="#14b8a6"/>
+      <stop offset="100%" stop-color="#06b6d4"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="8" fill="url(#bgGrad)"/>
+  <!-- Wallet / Gem Icon -->
+  <path fill="#022c22" opacity="0.25" d="M7 10h18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V12a2 2 0 0 1 2-2z"/>
+  <path fill="#ffffff" d="M7 8h16a1 1 0 0 1 1 1v2H6V9a1 1 0 0 1 1-1zm-2 5h20a1 1 0 0 1 1 1v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-9a1 1 0 0 1 1-1zm14 4a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"/>
+</svg>
