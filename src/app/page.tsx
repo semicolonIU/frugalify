@@ -105,7 +105,7 @@ export default function Home() {
   const [transactions, setTransactions] = useState<CashTransaction[]>([]);
   const [investments, setInvestments] = useState<InvestmentAsset[]>([]);
   const [settings, setSettings] = useState<UserSettings>({
-    wallets: [{ id: 'w-main', name: 'Dompet Utama', type: 'BANK', balance: 0 }],
+    wallets: [],
     incomeTemplates: [],
     monthlyExpenseBudget: 0,
   });
@@ -161,7 +161,7 @@ export default function Home() {
     let loadedTxs: CashTransaction[] = [];
     let loadedInvestments: InvestmentAsset[] = [];
     let loadedSettings: UserSettings = {
-      wallets: [{ id: 'w-main', name: 'Dompet Utama', type: 'BANK', balance: 0 }],
+      wallets: [],
       incomeTemplates: [],
       monthlyExpenseBudget: 0,
     };

@@ -1,9 +1,7 @@
 import { CashTransaction, InvestmentAsset, UserSettings } from './types';
 
 const INITIAL_SETTINGS: UserSettings = {
-  wallets: [
-    { id: 'w-main', name: 'Dompet Utama', type: 'BANK', balance: 0 }
-  ],
+  wallets: [],
   incomeTemplates: [],
   monthlyExpenseBudget: 0
 };
