@@ -2,36 +2,15 @@ import { CashTransaction, InvestmentAsset, UserSettings } from './types';
 
 const INITIAL_SETTINGS: UserSettings = {
   wallets: [
-    { id: 'w-bca', name: 'BCA Utama', type: 'BANK', balance: 15000000 },
-    { id: 'w-gopay', name: 'GoPay', type: 'EWALLET', balance: 500000 },
-    { id: 'w-cash', name: 'Tunai Dompet', type: 'CASH', balance: 350000 }
+    { id: 'w-main', name: 'Dompet Utama', type: 'BANK', balance: 0 }
   ],
-  incomeTemplates: [
-    { id: 'inc-1', name: 'Gaji Bulanan', amount: 12000000, category: 'Gaji', targetWalletId: 'w-bca' }
-  ],
+  incomeTemplates: [],
   monthlyExpenseBudget: 5000000
 };
 
-const INITIAL_TRANSACTIONS: CashTransaction[] = [
-  {
-    id: 'tx-1', type: 'INCOME', title: 'Gaji Bulan Ini', amount: 12000000, date: '2026-08-01', category: 'Gaji', walletId: 'w-bca', createdAt: new Date().toISOString()
-  },
-  {
-    id: 'tx-2', type: 'EXPENSE', title: 'Belanja Bulanan', amount: 450000, date: '2026-08-02', category: 'Makanan & Groceries', walletId: 'w-bca', createdAt: new Date().toISOString()
-  }
-];
+const INITIAL_TRANSACTIONS: CashTransaction[] = [];
 
-const INITIAL_INVESTMENTS: InvestmentAsset[] = [
-  {
-    id: 'inv-1', assetClass: 'STOCK', ticker: 'BBCA', name: 'Bank Central Asia', units: 1500, avgBuyPrice: 9150, currentPrice: 10250, totalValue: 15375000, totalCost: 13725000, pnlAmount: 1650000, pnlPercentage: 12.02, updatedAt: new Date().toISOString()
-  },
-  {
-    id: 'inv-2', assetClass: 'CRYPTO', ticker: 'BTC-USD', name: 'Bitcoin', units: 0.015, avgBuyPrice: 950000000, currentPrice: 1050000000, totalValue: 15750000, totalCost: 14250000, pnlAmount: 1500000, pnlPercentage: 10.5, updatedAt: new Date().toISOString()
-  },
-  {
-    id: 'inv-3', assetClass: 'GOLD', ticker: 'ANTAM', name: 'Emas Antam LM 24K', units: 10, avgBuyPrice: 2100000, currentPrice: 2600000, totalValue: 26000000, totalCost: 21000000, pnlAmount: 5000000, pnlPercentage: 23.81, updatedAt: new Date().toISOString()
-  }
-];
+const INITIAL_INVESTMENTS: InvestmentAsset[] = [];
 
 const KEYS = {
   TRANSACTIONS: 'frugal_transactions_v2',

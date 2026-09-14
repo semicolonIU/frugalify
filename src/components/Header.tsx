@@ -7,6 +7,8 @@ import { isGeminiConfigured } from '@/lib/gemini';
 import { useTheme } from '@/components/ThemeProvider';
 import { usePrivacy } from '@/components/PrivacyProvider';
 
+import { isAppwriteConfigured } from '@/lib/appwrite';
+
 interface HeaderProps {
   score: FinancialLivingScore;
   onOpenSettings: () => void;
@@ -61,6 +63,14 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Right: Actions Glass Toolbar */}
         <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
           
+          {/* Appwrite Cloud Sync Badge */}
+          {isAppwriteConfigured && (
+            <div className="hidden md:flex items-center space-x-1 px-2.5 py-1 rounded-full bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20 text-xs font-extrabold">
+              <Sparkles className="w-3.5 h-3.5 text-cyan-500 animate-pulse" />
+              <span>Appwrite Sync</span>
+            </div>
+          )}
+
           {/* Mini Mobile Score Badge */}
           <div className={`flex items-center gap-1 px-2 py-1 rounded-xl text-[10px] font-black border ${getScoreColorBadge()}`}>
             <Activity className="w-3 h-3" />

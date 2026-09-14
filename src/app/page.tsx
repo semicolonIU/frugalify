@@ -29,15 +29,26 @@ import {
   getStoredTransactions,
   addStoredTransaction,
   deleteStoredTransaction,
+  saveStoredTransactions,
   getStoredInvestments,
   saveStoredInvestments,
   updateOrAddInvestments,
   getStoredSettings,
   saveStoredSettings,
 } from '@/lib/storage';
+import { fetchDynamicQuote, MonthlyExpenseMetrics } from '@/lib/gemini';
 import { calculateFinancialLivingScore } from '@/lib/frugalScore';
 import { fetchLiveAssetPrices, recalculateInvestmentsWithLivePrices } from '@/lib/stocks';
-import { fetchDynamicQuote, MonthlyExpenseMetrics } from '@/lib/gemini';
+import {
+  isAppwriteConfigured,
+  fetchAppwriteTransactions,
+  syncSaveAppwriteTransaction,
+  syncDeleteAppwriteTransaction,
+  fetchAppwriteInvestments,
+  syncSaveAppwriteInvestments,
+  fetchAppwriteSettings,
+  syncSaveAppwriteSettings,
+} from '@/lib/appwrite';
 
 // Helper to compute monthly expense & income metrics aligned with Card Pengeluaran Bulan Ini
 const getMonthlyMetrics = (txs: CashTransaction[], userSettings: UserSettings): MonthlyExpenseMetrics => {
@@ -140,17 +151,46 @@ export default function Home() {
     setToasts(prev => prev.filter(t => t.id !== id));
   };
 
-  // Initial Load
+  // Initial Load with Cloud Sync support
   useEffect(() => {
-    const loadedTxs = getStoredTransactions();
-    const loadedInvestments = getStoredInvestments();
-    const loadedSettings = getStoredSettings();
+    const initApp = async () => {
+      let loadedTxs = getStoredTransactions();
+      let loadedInvestments = getStoredInvestments();
+      let loadedSettings = getStoredSettings();
 
-    setTransactions(loadedTxs);
-    setInvestments(loadedInvestments);
-    setSettings(loadedSettings);
+      if (isAppwriteConfigured) {
+        try {
+          const [cloudTxs, cloudInvestments, cloudSettings] = await Promise.all([
+            fetchAppwriteTransactions(),
+            fetchAppwriteInvestments(),
+            fetchAppwriteSettings(),
+          ]);
 
-    refreshMarketData(loadedTxs, loadedInvestments, loadedSettings);
+          if (cloudTxs && cloudTxs.length > 0) {
+            loadedTxs = cloudTxs;
+            saveStoredTransactions(cloudTxs);
+          }
+          if (cloudInvestments && cloudInvestments.length > 0) {
+            loadedInvestments = cloudInvestments;
+            saveStoredInvestments(cloudInvestments);
+          }
+          if (cloudSettings && cloudSettings.wallets && cloudSettings.wallets.length > 0) {
+            loadedSettings = cloudSettings;
+            saveStoredSettings(cloudSettings);
+          }
+        } catch (err) {
+          console.warn('Appwrite Cloud sync skipped/failed on initial load:', err);
+        }
+      }
+
+      setTransactions(loadedTxs);
+      setInvestments(loadedInvestments);
+      setSettings(loadedSettings);
+
+      refreshMarketData(loadedTxs, loadedInvestments, loadedSettings);
+    };
+
+    initApp();
   }, []);
 
   const refreshMarketData = async (
@@ -182,7 +222,7 @@ export default function Home() {
     setConfirmState({
       isOpen: true,
       title: 'Reset Semua Data',
-      message: 'PERINGATAN: Aksi ini akan menghapus semua data transaksi, portofolio saham, dan pengaturan wallet Anda. Data akan dikembalikan ke kondisi dummy awal.',
+      message: 'PERINGATAN: Aksi ini akan menghapus semua data transaksi, portofolio saham, dan pengaturan wallet Anda.',
       confirmText: 'Reset Total',
       confirmVariant: 'danger',
       action: () => {
@@ -232,6 +272,10 @@ export default function Home() {
     const updatedInvestments = updateOrAddInvestments(formatted);
     setInvestments(updatedInvestments);
     
+    if (isAppwriteConfigured) {
+      syncSaveAppwriteInvestments(updatedInvestments);
+    }
+
     const newScore = calculateFinancialLivingScore(transactions, updatedInvestments, settings);
     setScore(newScore);
   };
@@ -243,6 +287,11 @@ export default function Home() {
     // Refresh settings to get updated wallet balances
     const updatedSettings = getStoredSettings();
     setSettings(updatedSettings);
+
+    if (isAppwriteConfigured) {
+      syncSaveAppwriteTransaction(transaction);
+      syncSaveAppwriteSettings(updatedSettings);
+    }
 
     const newScore = calculateFinancialLivingScore(updatedTxs, investments, updatedSettings);
     setScore(newScore);
@@ -265,6 +314,11 @@ export default function Home() {
         const updatedSettings = getStoredSettings();
         setSettings(updatedSettings);
 
+        if (isAppwriteConfigured) {
+          syncDeleteAppwriteTransaction(id);
+          syncSaveAppwriteSettings(updatedSettings);
+        }
+
         const newScore = calculateFinancialLivingScore(updatedTxs, investments, updatedSettings);
         setScore(newScore);
         
@@ -277,6 +331,10 @@ export default function Home() {
   const handleSaveSettings = (newSettings: UserSettings) => {
     setSettings(newSettings);
     saveStoredSettings(newSettings);
+
+    if (isAppwriteConfigured) {
+      syncSaveAppwriteSettings(newSettings);
+    }
 
     const newScore = calculateFinancialLivingScore(transactions, investments, newSettings);
     setScore(newScore);
@@ -300,6 +358,10 @@ export default function Home() {
   const handleAddInvestmentManual = (asset: { assetClass: AssetClass, ticker: string, name: string, units: number, avgBuyPrice: number }) => {
     const updatedInvestments = updateOrAddInvestments([asset]);
     setInvestments(updatedInvestments);
+
+    if (isAppwriteConfigured) {
+      syncSaveAppwriteInvestments(updatedInvestments);
+    }
 
     const newScore = calculateFinancialLivingScore(transactions, updatedInvestments, settings);
     setScore(newScore);
