@@ -1,14 +1,14 @@
 'use client';
 
 import React from 'react';
-import { Sparkles, Plus, Sliders, Wallet, Settings } from 'lucide-react';
+import { Sparkles, Plus, Sliders, Wallet, BarChart3 } from 'lucide-react';
 
 interface FloatingBottomNavProps {
   onOpenAIScanPicker: () => void;
   onOpenManualExpense: () => void;
   onOpenWallet: () => void;
   onOpenBudget: () => void;
-  onOpenSettings: () => void;
+  onOpenRecap: () => void;
 }
 
 export const FloatingBottomNav: React.FC<FloatingBottomNavProps> = ({
@@ -16,7 +16,7 @@ export const FloatingBottomNav: React.FC<FloatingBottomNavProps> = ({
   onOpenManualExpense,
   onOpenWallet,
   onOpenBudget,
-  onOpenSettings,
+  onOpenRecap,
 }) => {
   return (
     <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-[94%] max-w-lg">
@@ -73,15 +73,15 @@ export const FloatingBottomNav: React.FC<FloatingBottomNavProps> = ({
           </span>
         </button>
 
-        {/* 5. Pengaturan umum */}
+        {/* 5. Rekap Bulanan */}
         <button
-          onClick={onOpenSettings}
-          className="flex flex-col items-center justify-center p-2 rounded-2xl hover:bg-slate-200/80 dark:hover:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-all active:scale-90 group min-w-[56px]"
-          title="Pengaturan"
+          onClick={onOpenRecap}
+          className="flex flex-col items-center justify-center p-2 rounded-2xl hover:bg-rose-500/15 text-slate-600 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-400 transition-all active:scale-90 group min-w-[56px]"
+          title="Rekap Pengeluaran Bulanan"
         >
-          <Settings className="w-5 h-5 group-hover:scale-110 transition-transform text-slate-500" />
-          <span className="text-[10px] font-bold mt-0.5 text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white">
-            Lainnya
+          <BarChart3 className="w-5 h-5 group-hover:scale-110 transition-transform text-rose-500" />
+          <span className="text-[10px] font-bold mt-0.5 text-slate-600 dark:text-slate-400 group-hover:text-rose-600 dark:group-hover:text-rose-400">
+            Rekap
           </span>
         </button>
 

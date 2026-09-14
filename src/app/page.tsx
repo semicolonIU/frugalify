@@ -509,7 +509,7 @@ export default function Home() {
         onOpenManualExpense={() => handleManualExpenseTrigger()}
         onOpenWallet={() => { setSettingsInitialTab('WALLETS'); setIsSettingsOpen(true); }}
         onOpenBudget={() => { setSettingsInitialTab('BUDGET'); setIsSettingsOpen(true); }}
-        onOpenSettings={() => { setSettingsInitialTab('WALLETS'); setIsSettingsOpen(true); }}
+        onOpenRecap={() => setIsRecapOpen(true)}
       />
 
       {/* Auth Modal (Login / Register) */}

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Wallet, Settings, RefreshCw, Sun, Moon, Eye, EyeOff, Activity, LogOut, LogIn } from 'lucide-react';
+import { Wallet, Settings, RefreshCw, Sun, Moon, Eye, EyeOff, Activity, LogOut, LogIn, ChevronDown } from 'lucide-react';
 import { FinancialLivingScore, AppUser } from '@/lib/types';
 import { useTheme } from '@/components/ThemeProvider';
 import { usePrivacy } from '@/components/PrivacyProvider';
@@ -70,24 +70,26 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="relative">
             {currentUser ? (
               <div className="relative">
-                {/* Avatar Chip — mobile: hanya ikon inisial, sm+: tampilkan nama */}
+                {/* Avatar Chip — mobile: avatar circle, sm+: avatar + name + chevron */}
                 <button
                   onClick={() => setShowUserDropdown(!showUserDropdown)}
-                  className="flex items-center gap-1.5 pl-1 pr-2 sm:px-2.5 py-1 sm:py-1.5 rounded-full sm:rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition-all"
+                  className="flex items-center gap-1.5 p-1 sm:px-2.5 sm:py-1.5 rounded-full sm:rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition-all active:scale-95 shadow-sm"
                   title={currentUser.name}
                 >
                   <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-500 text-white flex items-center justify-center text-[11px] font-black uppercase shrink-0 shadow-sm shadow-emerald-500/30">
                     {currentUser.name ? currentUser.name.charAt(0) : 'U'}
                   </div>
-                  <span className="hidden sm:block max-w-[100px] truncate text-xs font-bold text-slate-800 dark:text-slate-200">{currentUser.name}</span>
+                  <span className="hidden sm:block max-w-[100px] truncate text-xs font-bold text-slate-800 dark:text-slate-200">
+                    {currentUser.name}
+                  </span>
+                  <ChevronDown className={`w-3 h-3 text-slate-400 transition-transform duration-200 ${showUserDropdown ? 'rotate-180' : ''}`} />
                 </button>
 
-                {/* User Dropdown — fixed agar tidak terpotong di layar kecil */}
+                {/* User Dropdown — Tepat di bawah chip avatar (left-0 sm:left-auto sm:right-0) */}
                 {showUserDropdown && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setShowUserDropdown(false)} />
-                    {/* Gunakan fixed + right-3 top-14 agar selalu di dalam viewport */}
-                    <div className="fixed right-3 top-14 w-56 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl shadow-slate-900/20 z-50 overflow-hidden">
+                    <div className="absolute left-0 sm:left-auto sm:right-0 top-full mt-2 w-56 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl shadow-slate-900/30 z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
                       {/* Header info user */}
                       <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 border-b border-slate-100 dark:border-slate-800">
                         <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-500 text-white flex items-center justify-center text-base font-black uppercase shrink-0 shadow-md shadow-emerald-500/30">
