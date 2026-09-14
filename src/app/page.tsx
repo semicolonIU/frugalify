@@ -158,9 +158,13 @@ export default function Home() {
   };
 
   const loadUserData = async (user: AppUser | null) => {
-    let loadedTxs = getStoredTransactions();
-    let loadedInvestments = getStoredInvestments();
-    let loadedSettings = getStoredSettings();
+    let loadedTxs: CashTransaction[] = [];
+    let loadedInvestments: InvestmentAsset[] = [];
+    let loadedSettings: UserSettings = {
+      wallets: [{ id: 'w-main', name: 'Dompet Utama', type: 'BANK', balance: 0 }],
+      incomeTemplates: [],
+      monthlyExpenseBudget: 0,
+    };
 
     if (isAppwriteConfigured) {
       try {
@@ -170,21 +174,33 @@ export default function Home() {
           fetchAppwriteSettings(user?.id),
         ]);
 
-        if (cloudTxs && cloudTxs.length > 0) {
+        if (cloudTxs !== null) {
           loadedTxs = cloudTxs;
           saveStoredTransactions(cloudTxs);
+        } else {
+          loadedTxs = getStoredTransactions();
         }
-        if (cloudInvestments && cloudInvestments.length > 0) {
+
+        if (cloudInvestments !== null) {
           loadedInvestments = cloudInvestments;
           saveStoredInvestments(cloudInvestments);
+        } else {
+          loadedInvestments = getStoredInvestments();
         }
-        if (cloudSettings && cloudSettings.wallets && cloudSettings.wallets.length > 0) {
+
+        if (cloudSettings !== null && cloudSettings.wallets) {
           loadedSettings = cloudSettings;
           saveStoredSettings(cloudSettings);
+        } else {
+          loadedSettings = getStoredSettings();
         }
       } catch (err) {
-        console.warn('Appwrite Cloud sync skipped/failed on load:', err);
+        console.warn('Appwrite Cloud sync load error:', err);
       }
+    } else {
+      loadedTxs = getStoredTransactions();
+      loadedInvestments = getStoredInvestments();
+      loadedSettings = getStoredSettings();
     }
 
     setTransactions(loadedTxs);
@@ -282,7 +298,7 @@ export default function Home() {
     setIsInteractiveFormOpen(true);
   };
 
-  const handlePortfolioScanSuccess = (newAssets: Array<{ ticker: string; lots: number; avgBuyPrice?: number }>) => {
+  const handlePortfolioScanSuccess = async (newAssets: Array<{ ticker: string; lots: number; avgBuyPrice?: number }>) => {
     const formatted = newAssets.map(a => ({
       assetClass: 'STOCK' as AssetClass,
       ticker: a.ticker,
@@ -294,14 +310,14 @@ export default function Home() {
     setInvestments(updatedInvestments);
     
     if (isAppwriteConfigured) {
-      syncSaveAppwriteInvestments(updatedInvestments, currentUser?.id);
+      await syncSaveAppwriteInvestments(updatedInvestments, currentUser?.id);
     }
 
     const newScore = calculateFinancialLivingScore(transactions, updatedInvestments, settings);
     setScore(newScore);
   };
 
-  const handleSaveTransaction = (transaction: CashTransaction) => {
+  const handleSaveTransaction = async (transaction: CashTransaction) => {
     const updatedTxs = addStoredTransaction(transaction);
     setTransactions(updatedTxs);
 
@@ -310,8 +326,11 @@ export default function Home() {
     setSettings(updatedSettings);
 
     if (isAppwriteConfigured) {
-      syncSaveAppwriteTransaction(transaction, currentUser?.id);
-      syncSaveAppwriteSettings(updatedSettings, currentUser?.id);
+      const okTx = await syncSaveAppwriteTransaction(transaction, currentUser?.id);
+      const okSt = await syncSaveAppwriteSettings(updatedSettings, currentUser?.id);
+      if (okTx && okSt) {
+        showToast('Transaksi tersimpan ke Appwrite Database Cloud', 'success');
+      }
     }
 
     const newScore = calculateFinancialLivingScore(updatedTxs, investments, updatedSettings);
@@ -325,10 +344,10 @@ export default function Home() {
     setConfirmState({
       isOpen: true,
       title: 'Hapus Transaksi',
-      message: 'Apakah Anda yakin ingin menghapus riwayat transaksi ini? Data yang sudah dihapus tidak dapat dikembalikan.',
+      message: 'Apakah Anda yakin ingin menghapus riwayat transaksi ini dari database?',
       confirmText: 'Ya, Hapus',
       confirmVariant: 'danger',
-      action: () => {
+      action: async () => {
         const updatedTxs = deleteStoredTransaction(id);
         setTransactions(updatedTxs);
 
@@ -336,25 +355,28 @@ export default function Home() {
         setSettings(updatedSettings);
 
         if (isAppwriteConfigured) {
-          syncDeleteAppwriteTransaction(id);
-          syncSaveAppwriteSettings(updatedSettings, currentUser?.id);
+          await syncDeleteAppwriteTransaction(id);
+          await syncSaveAppwriteSettings(updatedSettings, currentUser?.id);
         }
 
         const newScore = calculateFinancialLivingScore(updatedTxs, investments, updatedSettings);
         setScore(newScore);
         
-        showToast('Transaksi berhasil dihapus', 'success');
+        showToast('Transaksi berhasil dihapus dari Appwrite Database', 'success');
         setConfirmState(prev => ({ ...prev, isOpen: false }));
       }
     });
   };
 
-  const handleSaveSettings = (newSettings: UserSettings) => {
+  const handleSaveSettings = async (newSettings: UserSettings) => {
     setSettings(newSettings);
     saveStoredSettings(newSettings);
 
     if (isAppwriteConfigured) {
-      syncSaveAppwriteSettings(newSettings, currentUser?.id);
+      const ok = await syncSaveAppwriteSettings(newSettings, currentUser?.id);
+      if (ok) {
+        showToast('Pengaturan tersimpan ke Appwrite Database', 'success');
+      }
     }
 
     const newScore = calculateFinancialLivingScore(transactions, investments, newSettings);
@@ -376,12 +398,15 @@ export default function Home() {
     showToast(`🎉 Success! Gaji "${template.name}" sebesar Rp ${template.amount.toLocaleString('id-ID')} telah dicairkan ke dompet!`, 'success');
   };
 
-  const handleAddInvestmentManual = (asset: { assetClass: AssetClass, ticker: string, name: string, units: number, avgBuyPrice: number }) => {
+  const handleAddInvestmentManual = async (asset: { assetClass: AssetClass, ticker: string, name: string, units: number, avgBuyPrice: number }) => {
     const updatedInvestments = updateOrAddInvestments([asset]);
     setInvestments(updatedInvestments);
 
     if (isAppwriteConfigured) {
-      syncSaveAppwriteInvestments(updatedInvestments, currentUser?.id);
+      const ok = await syncSaveAppwriteInvestments(updatedInvestments, currentUser?.id);
+      if (ok) {
+        showToast('Portofolio tersimpan ke Appwrite Database', 'success');
+      }
     }
 
     const newScore = calculateFinancialLivingScore(transactions, updatedInvestments, settings);
@@ -401,7 +426,7 @@ export default function Home() {
           <Wallet className="w-6 h-6" />
         </div>
         <p className="text-sm font-bold text-slate-500 dark:text-slate-400 animate-pulse">
-          Memuat Frugalify...
+          Connecting to Appwrite Database...
         </p>
       </div>
     );

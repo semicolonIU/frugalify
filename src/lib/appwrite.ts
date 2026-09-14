@@ -31,6 +31,15 @@ if (isAppwriteConfigured) {
   }
 }
 
+/**
+ * Clean & format Document IDs for Appwrite compliance (max 36 chars, alphanumeric, ., -, _)
+ */
+export function cleanAppwriteDocId(rawId?: string): string {
+  if (!rawId) return ID.unique();
+  const cleaned = rawId.replace(/[^a-zA-Z0-9._-]/g, '_').substring(0, 36);
+  return cleaned || ID.unique();
+}
+
 // Key for local user session state
 const LOCAL_USER_KEY = 'frugalify_current_user_v1';
 const LOCAL_USERS_DB = 'frugalify_registered_users_v1';
@@ -215,7 +224,7 @@ export async function fetchAppwriteTransactions(userId?: string): Promise<CashTr
       createdAt: doc.createdAt || doc.$createdAt,
     })) as CashTransaction[];
   } catch (err) {
-    console.warn('Appwrite fetchTransactions skipped/not setup:', err);
+    console.warn('Appwrite fetchTransactions error:', err);
     return null;
   }
 }
@@ -226,6 +235,7 @@ export async function fetchAppwriteTransactions(userId?: string): Promise<CashTr
 export async function syncSaveAppwriteTransaction(tx: CashTransaction, userId?: string): Promise<boolean> {
   if (!databases || !isAppwriteConfigured) return false;
   try {
+    const docId = cleanAppwriteDocId(tx.id);
     const payload: any = {
       type: tx.type,
       title: tx.title,
@@ -243,15 +253,24 @@ export async function syncSaveAppwriteTransaction(tx: CashTransaction, userId?: 
     };
     if (userId) payload.userId = userId;
 
-    await databases.createDocument(
-      APPWRITE_DATABASE_ID,
-      COLLECTIONS.TRANSACTIONS,
-      tx.id || ID.unique(),
-      payload
-    );
+    try {
+      await databases.updateDocument(
+        APPWRITE_DATABASE_ID,
+        COLLECTIONS.TRANSACTIONS,
+        docId,
+        payload
+      );
+    } catch {
+      await databases.createDocument(
+        APPWRITE_DATABASE_ID,
+        COLLECTIONS.TRANSACTIONS,
+        docId,
+        payload
+      );
+    }
     return true;
   } catch (err) {
-    console.warn('Appwrite saveTransaction skipped:', err);
+    console.warn('Appwrite saveTransaction error:', err);
     return false;
   }
 }
@@ -262,14 +281,15 @@ export async function syncSaveAppwriteTransaction(tx: CashTransaction, userId?: 
 export async function syncDeleteAppwriteTransaction(id: string): Promise<boolean> {
   if (!databases || !isAppwriteConfigured) return false;
   try {
+    const docId = cleanAppwriteDocId(id);
     await databases.deleteDocument(
       APPWRITE_DATABASE_ID,
       COLLECTIONS.TRANSACTIONS,
-      id
+      docId
     );
     return true;
   } catch (err) {
-    console.warn('Appwrite deleteTransaction skipped:', err);
+    console.warn('Appwrite deleteTransaction error:', err);
     return false;
   }
 }
@@ -306,7 +326,7 @@ export async function fetchAppwriteInvestments(userId?: string): Promise<Investm
       updatedAt: doc.updatedAt || doc.$updatedAt,
     })) as InvestmentAsset[];
   } catch (err) {
-    console.warn('Appwrite fetchInvestments skipped/not setup:', err);
+    console.warn('Appwrite fetchInvestments error:', err);
     return null;
   }
 }
@@ -318,6 +338,7 @@ export async function syncSaveAppwriteInvestments(assets: InvestmentAsset[], use
   if (!databases || !isAppwriteConfigured) return false;
   try {
     for (const asset of assets) {
+      const docId = cleanAppwriteDocId(asset.id);
       const payload: any = {
         assetClass: asset.assetClass,
         ticker: asset.ticker,
@@ -337,21 +358,21 @@ export async function syncSaveAppwriteInvestments(assets: InvestmentAsset[], use
         await databases.updateDocument(
           APPWRITE_DATABASE_ID,
           COLLECTIONS.INVESTMENTS,
-          asset.id,
+          docId,
           payload
         );
       } catch {
         await databases.createDocument(
           APPWRITE_DATABASE_ID,
           COLLECTIONS.INVESTMENTS,
-          asset.id || ID.unique(),
+          docId,
           payload
         );
       }
     }
     return true;
   } catch (err) {
-    console.warn('Appwrite syncSaveInvestments skipped:', err);
+    console.warn('Appwrite syncSaveInvestments error:', err);
     return false;
   }
 }
@@ -362,7 +383,7 @@ export async function syncSaveAppwriteInvestments(assets: InvestmentAsset[], use
 export async function fetchAppwriteSettings(userId?: string): Promise<UserSettings | null> {
   if (!databases || !isAppwriteConfigured) return null;
   try {
-    const docId = userId ? `settings_${userId}` : 'user_settings_global';
+    const docId = cleanAppwriteDocId(userId ? `settings_${userId}` : 'user_settings_global');
     const doc = await databases.getDocument(
       APPWRITE_DATABASE_ID,
       COLLECTIONS.SETTINGS,
@@ -372,10 +393,10 @@ export async function fetchAppwriteSettings(userId?: string): Promise<UserSettin
     return {
       wallets: doc.wallets ? JSON.parse(doc.wallets) : [],
       incomeTemplates: doc.incomeTemplates ? JSON.parse(doc.incomeTemplates) : [],
-      monthlyExpenseBudget: doc.monthlyExpenseBudget || 5000000,
+      monthlyExpenseBudget: doc.monthlyExpenseBudget || 0,
     };
   } catch (err) {
-    console.warn('Appwrite fetchSettings skipped/not setup:', err);
+    console.warn('Appwrite fetchSettings error:', err);
     return null;
   }
 }
@@ -386,7 +407,7 @@ export async function fetchAppwriteSettings(userId?: string): Promise<UserSettin
 export async function syncSaveAppwriteSettings(settings: UserSettings, userId?: string): Promise<boolean> {
   if (!databases || !isAppwriteConfigured) return false;
   try {
-    const docId = userId ? `settings_${userId}` : 'user_settings_global';
+    const docId = cleanAppwriteDocId(userId ? `settings_${userId}` : 'user_settings_global');
     const payload: any = {
       wallets: JSON.stringify(settings.wallets),
       incomeTemplates: JSON.stringify(settings.incomeTemplates),
@@ -411,7 +432,7 @@ export async function syncSaveAppwriteSettings(settings: UserSettings, userId?: 
     }
     return true;
   } catch (err) {
-    console.warn('Appwrite syncSaveSettings skipped:', err);
+    console.warn('Appwrite syncSaveSettings error:', err);
     return false;
   }
 }
