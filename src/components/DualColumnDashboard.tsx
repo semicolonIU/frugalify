@@ -133,69 +133,82 @@ export const DualColumnDashboard: React.FC<DualColumnDashboardProps> = ({
     return (
       <div 
         key={tx.id}
-        className="glass-card rounded-xl p-3.5 transition-all border border-slate-200/80 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700/80 shadow-sm"
+        className="glass-card rounded-2xl p-3 sm:p-3.5 transition-all border border-slate-200/90 dark:border-slate-800/90 hover:border-emerald-500/30 shadow-sm"
       >
-        <div className="flex items-start justify-between">
-          <div className="flex items-start space-x-3">
-            <div className={`p-2 rounded-xl border shrink-0 ${
-              isIncome ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-600 dark:text-emerald-400' :
-              isTransfer ? 'bg-cyan-500/20 border-cyan-500/30 text-cyan-600 dark:text-cyan-400' :
-              'bg-rose-500/20 border-rose-500/30 text-rose-600 dark:text-rose-400'
+        <div className="flex items-center justify-between gap-2.5">
+          {/* Left: Icon & Main Info */}
+          <div className="flex items-center space-x-2.5 min-w-0">
+            <div className={`p-2.5 rounded-2xl border shrink-0 shadow-sm ${
+              isIncome ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-600 dark:text-emerald-400' :
+              isTransfer ? 'bg-cyan-500/15 border-cyan-500/30 text-cyan-600 dark:text-cyan-400' :
+              'bg-rose-500/15 border-rose-500/30 text-rose-600 dark:text-rose-400'
             }`}>
               {isIncome ? <ArrowDownLeft className="w-4 h-4" /> :
                isTransfer ? <ArrowRightLeft className="w-4 h-4" /> :
                <ArrowUpRight className="w-4 h-4" />}
             </div>
-            <div>
-              <div className="flex items-center space-x-2">
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white tracking-tight">{tx.title}</h3>
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-400 font-medium">
+            
+            <div className="min-w-0">
+              <div className="flex items-center space-x-1.5 min-w-0">
+                <h3 className="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white tracking-tight truncate">
+                  {tx.title}
+                </h3>
+                <span className="text-[9px] sm:text-[10px] px-1.5 py-0.2 rounded-md bg-slate-200/80 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold shrink-0">
                   {tx.category}
                 </span>
               </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1.5">
-                <span>{tx.date}</span>
-                <span>•</span>
-                <span className="text-slate-700 dark:text-slate-300 font-medium">
+              
+              <p className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1 truncate font-medium">
+                <span className="text-slate-700 dark:text-slate-300 font-semibold">
                   {isTransfer ? `${getWalletName(tx.walletId)} ➔ ${getWalletName(tx.toWalletId || '')}` : getWalletName(tx.walletId)}
                 </span>
+                {tx.platform && (
+                  <>
+                    <span>•</span>
+                    <span className="text-slate-400 truncate">{tx.platform}</span>
+                  </>
+                )}
               </p>
             </div>
           </div>
 
-          <div className="text-right">
-            <div className={`text-sm font-extrabold tracking-tight ${
+          {/* Right: Nominal Amount & Delete Action */}
+          <div className="text-right shrink-0">
+            <div className={`text-xs sm:text-sm font-black tracking-tight ${
               isIncome ? 'text-emerald-600 dark:text-emerald-400' : isTransfer ? 'text-cyan-600 dark:text-cyan-400' : 'text-rose-600 dark:text-rose-400'
             }`}>
               {isIncome ? '+' : isTransfer ? '' : '-'}{formatCurrency(tx.amount)}
             </div>
-            <button
-              onClick={() => onDeleteTransaction(tx.id)}
-              className="text-slate-400 hover:text-rose-500 p-1 transition-colors mt-1"
-              title="Hapus Transaksi"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
+            
+            <div className="flex items-center justify-end space-x-1 mt-0.5">
+              <button
+                onClick={() => onDeleteTransaction(tx.id)}
+                className="text-slate-400 hover:text-rose-500 p-1 rounded-lg hover:bg-rose-500/10 transition-colors"
+                title="Hapus Transaksi"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Expandable item details */}
         {hasDetails && (
-          <div className="mt-2.5 pt-2 border-t border-slate-200 dark:border-slate-800/80">
+          <div className="mt-2 pt-2 border-t border-slate-200/80 dark:border-slate-800/80">
             <button
               onClick={() => setExpandedId(isExpanded ? null : tx.id)}
-              className="text-[11px] text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium flex items-center gap-1"
+              className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 font-semibold flex items-center gap-1"
             >
               {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-              Lihat Rincian Transaksi
+              <span>{isExpanded ? 'Sembunyikan Rincian' : 'Lihat Rincian Biaya & Diskon'}</span>
             </button>
 
             {isExpanded && (
-              <div className="mt-2 p-2.5 rounded-lg bg-slate-100 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 space-y-1">
+              <div className="mt-2 p-2.5 rounded-xl bg-slate-100/90 dark:bg-slate-950/70 border border-slate-200/90 dark:border-slate-800/90 space-y-1 text-xs">
                 {tx.items && tx.items.length > 0 && tx.items.map((prod, idx) => (
                   <div key={idx} className="flex items-center justify-between text-xs text-slate-700 dark:text-slate-300">
-                    <span className="truncate max-w-[200px] text-slate-500 dark:text-slate-400">• {prod.name} ({prod.qty}x)</span>
-                    <span>{formatCurrency(prod.subtotal)}</span>
+                    <span className="truncate max-w-[180px] sm:max-w-[220px] text-slate-500 dark:text-slate-400">• {prod.name} ({prod.qty}x)</span>
+                    <span className="font-semibold">{formatCurrency(prod.subtotal)}</span>
                   </div>
                 ))}
                 
@@ -205,27 +218,27 @@ export const DualColumnDashboard: React.FC<DualColumnDashboardProps> = ({
                 
                 {tx.mainAmount !== undefined && tx.mainAmount > 0 && !(tx.items && tx.items.length > 0) && (
                   <div className="flex items-center justify-between text-xs text-slate-700 dark:text-slate-300">
-                    <span>Subtotal</span>
-                    <span>{formatCurrency(tx.mainAmount)}</span>
+                    <span>Subtotal Produk</span>
+                    <span className="font-semibold">{formatCurrency(tx.mainAmount)}</span>
                   </div>
                 )}
 
                 {tx.fees !== undefined && tx.fees > 0 && (
                   <div className="flex items-center justify-between text-xs text-slate-700 dark:text-slate-300">
-                    <span>Biaya Tambahan</span>
-                    <span className="text-rose-600 dark:text-rose-400">+{formatCurrency(tx.fees)}</span>
+                    <span>Biaya Layanan / Ongkir</span>
+                    <span className="text-rose-600 dark:text-rose-400 font-bold">+{formatCurrency(tx.fees)}</span>
                   </div>
                 )}
 
                 {tx.discount !== undefined && tx.discount > 0 && (
                   <div className="flex items-center justify-between text-xs text-slate-700 dark:text-slate-300">
-                    <span>Diskon</span>
-                    <span className="text-emerald-600 dark:text-emerald-400">-{formatCurrency(tx.discount)}</span>
+                    <span>Potongan / Diskon</span>
+                    <span className="text-emerald-600 dark:text-emerald-400 font-bold">-{formatCurrency(tx.discount)}</span>
                   </div>
                 )}
                 
-                <div className="border-t border-slate-200 dark:border-slate-800/80 my-1 pt-1 flex items-center justify-between text-xs font-bold text-slate-900 dark:text-white">
-                  <span>Total</span>
+                <div className="border-t border-slate-200 dark:border-slate-800 my-1 pt-1 flex items-center justify-between text-xs font-black text-slate-900 dark:text-white">
+                  <span>Total Pembayaran</span>
                   <span>{formatCurrency(tx.amount)}</span>
                 </div>
               </div>
@@ -242,51 +255,56 @@ export const DualColumnDashboard: React.FC<DualColumnDashboardProps> = ({
       {/* KOLOM KIRI (7 cols): Arus Kas Terpadu */}
       {/* ========================================================= */}
       <div className="lg:col-span-7 flex flex-col space-y-4">
-        <div className="glass-panel rounded-2xl p-4 sm:p-5 transition-colors duration-300">
+        <div className="glass-panel rounded-3xl p-4 sm:p-5 transition-colors duration-300">
+          
+          {/* Card Header & Mobile Action Bar */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
             <div>
-              <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <h2 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
                 <Receipt className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                 Riwayat Arus Kas Terpadu
               </h2>
-              <p className="text-xs text-slate-600 dark:text-slate-400">Pemasukan, Pengeluaran (AI Scan), & Transfer antar Dompet</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                Catatan Pengeluaran, Pemasukan & Transfer Wallet
+              </p>
             </div>
             
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 shrink-0">
               <button
                 onClick={onOpenScanReceipt}
-                className="px-3 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-xs font-semibold flex items-center gap-1.5 transition-all active:scale-95 shadow-lg shadow-emerald-500/10"
+                className="flex-1 sm:flex-none px-3 py-2 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:brightness-110 text-slate-950 text-xs font-black flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-md shadow-emerald-500/20"
               >
-                <Camera className="w-3.5 h-3.5" /> Scan Struk/Bukti
+                <Camera className="w-3.5 h-3.5" /> Scan AI Struk
               </button>
               <button
                 onClick={onOpenManualTransaction}
-                className="p-1.5 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 text-xs flex items-center gap-1 transition-all"
+                className="px-3 py-2 rounded-2xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 text-xs font-bold flex items-center justify-center gap-1 transition-all active:scale-95"
                 title="Input Transaksi Manual"
               >
-                <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Tambah</span>
+                <Plus className="w-4 h-4" /> <span className="inline">Manual</span>
               </button>
             </div>
           </div>
 
           {/* Search & Transaction Type Filters */}
-          <div className="flex flex-col space-y-2 mb-4">
+          <div className="flex flex-col space-y-2.5 mb-4">
             <div className="relative">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
-                placeholder="Cari transaksi, merchant, atau kategori..."
+                placeholder="Cari nama transaksi, toko, atau kategori..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full glass-input pl-9 pr-4 py-2 rounded-xl text-xs"
+                className="w-full glass-input pl-10 pr-4 py-2.5 rounded-2xl text-xs font-medium"
                 suppressHydrationWarning
               />
             </div>
 
+            {/* Filter Pills & Grouping Toggle */}
             <div className="flex items-center justify-between gap-2 flex-wrap">
-              <div className="flex items-center space-x-1.5 flex-wrap gap-y-1">
+              <div className="flex items-center space-x-1 flex-wrap gap-y-1">
                 {[
-                  { label: 'Semua Arus Kas', value: 'ALL' },
+                  { label: 'Semua', value: 'ALL' },
                   { label: 'Pengeluaran', value: 'EXPENSE' },
                   { label: 'Pemasukan', value: 'INCOME' },
                   { label: 'Transfer', value: 'TRANSFER' },
@@ -294,10 +312,10 @@ export const DualColumnDashboard: React.FC<DualColumnDashboardProps> = ({
                   <button
                     key={f.value}
                     onClick={() => setTxTypeFilter(f.value)}
-                    className={`px-3 py-1 rounded-lg text-[11px] font-semibold transition-all ${
+                    className={`px-2.5 py-1 rounded-xl text-[11px] font-extrabold transition-all ${
                       txTypeFilter === f.value
                         ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20'
-                        : 'bg-slate-200 dark:bg-slate-800/60 text-slate-700 dark:text-slate-400 hover:bg-slate-300 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200'
+                        : 'bg-slate-200/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-700'
                     }`}
                   >
                     {f.label}
@@ -308,48 +326,49 @@ export const DualColumnDashboard: React.FC<DualColumnDashboardProps> = ({
               {/* Mode Tampilan Toggle (Per Hari vs Semua) */}
               <button
                 onClick={() => setViewByDay(!viewByDay)}
-                className={`px-2.5 py-1 rounded-lg text-[11px] font-extrabold flex items-center gap-1.5 transition-all border ${
+                className={`px-2.5 py-1 rounded-xl text-[10px] sm:text-[11px] font-black flex items-center gap-1 transition-all border ${
                   viewByDay
-                    ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 shadow-sm'
+                    ? 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-300 border-cyan-500/30'
                     : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700'
                 }`}
                 title="Ganti Mode Tampilan Transaksi (Per Hari / Flat)"
               >
-                <CalendarDays className="w-3.5 h-3.5" />
+                <CalendarDays className="w-3.5 h-3.5 text-cyan-500" />
                 <span>{viewByDay ? 'Grup: Per Hari' : 'Grup: Semua'}</span>
               </button>
             </div>
           </div>
 
-          {/* List Transactions */}
-          <div className="space-y-4 max-h-[580px] overflow-y-auto pr-1">
+          {/* List Transactions Container */}
+          <div className="space-y-3.5 max-h-[600px] overflow-y-auto pr-1">
             {filteredTransactions.length === 0 ? (
-              <div className="text-center py-10 glass-card rounded-xl">
-                <Receipt className="w-8 h-8 text-slate-400 dark:text-slate-600 mx-auto mb-2" />
-                <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">Belum Ada Catatan Transaksi</p>
-                <p className="text-xs text-slate-500 mt-1">Unggah foto struk belanja atau catat transaksi Anda.</p>
+              <div className="text-center py-10 glass-card rounded-2xl">
+                <Receipt className="w-10 h-10 text-slate-400 dark:text-slate-600 mx-auto mb-2" />
+                <p className="text-sm font-extrabold text-slate-700 dark:text-slate-300">Belum Ada Catatan Transaksi</p>
+                <p className="text-xs text-slate-500 mt-1 font-medium">Unggah foto struk belanja atau catat transaksi Anda.</p>
               </div>
             ) : viewByDay ? (
               // Mode Tampilan Per Hari
               groupedByDay.map(group => (
                 <div key={group.date} className="space-y-2">
                   {/* Sticky Day Header Banner */}
-                  <div className="sticky top-0 z-10 px-3 py-1.5 rounded-xl bg-slate-200/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-300/80 dark:border-slate-800 flex items-center justify-between text-xs font-bold shadow-sm">
-                    <div className="flex items-center space-x-2 text-slate-800 dark:text-slate-200">
-                      <Calendar className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                      <span>{formatDateID(group.date)}</span>
-                      <span className="text-[10px] px-1.5 py-0.2 rounded-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-semibold border border-emerald-500/20">
+                  <div className="sticky top-0 z-10 px-3 py-2 rounded-2xl bg-slate-200/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-300/80 dark:border-slate-800 flex items-center justify-between text-xs font-black shadow-sm gap-2">
+                    <div className="flex items-center space-x-2 min-w-0">
+                      <Calendar className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                      <span className="text-slate-900 dark:text-white truncate">{formatDateID(group.date)}</span>
+                      <span className="hidden xs:inline-flex px-1.5 py-0.2 rounded-md bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold border border-emerald-500/20 shrink-0">
                         {relativeTimeID(group.date)}
                       </span>
                     </div>
-                    <div className="flex items-center space-x-2 text-[11px]">
+
+                    <div className="flex items-center space-x-1.5 text-[11px] shrink-0 font-black">
                       {group.totalExpense > 0 && (
-                        <span className="text-rose-600 dark:text-rose-400 font-extrabold">
+                        <span className="text-rose-600 dark:text-rose-400">
                           -{formatCurrency(group.totalExpense)}
                         </span>
                       )}
                       {group.totalIncome > 0 && (
-                        <span className="text-emerald-600 dark:text-emerald-400 font-extrabold">
+                        <span className="text-emerald-600 dark:text-emerald-400">
                           +{formatCurrency(group.totalIncome)}
                         </span>
                       )}
@@ -357,7 +376,7 @@ export const DualColumnDashboard: React.FC<DualColumnDashboardProps> = ({
                   </div>
 
                   {/* Transaksi di hari tersebut */}
-                  <div className="space-y-2 pl-1 sm:pl-2 border-l-2 border-slate-200/80 dark:border-slate-800/80 ml-2">
+                  <div className="space-y-2 pl-1.5 sm:pl-2 border-l-2 border-slate-200/80 dark:border-slate-800/80 ml-2">
                     {group.items.map(tx => renderTransactionCard(tx))}
                   </div>
                 </div>
