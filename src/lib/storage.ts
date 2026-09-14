@@ -5,7 +5,7 @@ const INITIAL_SETTINGS: UserSettings = {
     { id: 'w-main', name: 'Dompet Utama', type: 'BANK', balance: 0 }
   ],
   incomeTemplates: [],
-  monthlyExpenseBudget: 5000000
+  monthlyExpenseBudget: 0
 };
 
 const INITIAL_TRANSACTIONS: CashTransaction[] = [];

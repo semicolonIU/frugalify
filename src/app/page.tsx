@@ -16,6 +16,8 @@ import { ExpenseRecapModal } from '@/components/ExpenseRecapModal';
 import { AIScanPickerModal } from '@/components/AIScanPickerModal';
 import { FinancialScoreInfoModal } from '@/components/FinancialScoreInfoModal';
 import { AuthModal } from '@/components/AuthModal';
+import { AuthScreen } from '@/components/AuthScreen';
+import { Wallet } from 'lucide-react';
 
 import {
   CashTransaction,
@@ -69,9 +71,9 @@ const getMonthlyMetrics = (txs: CashTransaction[], userSettings: UserSettings): 
   const activeIncomesList = currentMonthIncomes.length > 0 ? currentMonthIncomes : txs.filter(t => t.type === 'INCOME');
   const totalIncome = activeIncomesList.reduce((acc, curr) => acc + curr.amount, 0);
 
-  const budget = userSettings.monthlyExpenseBudget || 5000000;
+  const budget = userSettings.monthlyExpenseBudget || 0;
   const remainingBudget = Math.max(0, budget - totalExpense);
-  const usedPercentage = (totalExpense / budget) * 100;
+  const usedPercentage = budget > 0 ? (totalExpense / budget) * 100 : 0;
   const dailyAvg = totalExpense / Math.max(1, new Date().getDate());
 
   const shopeeTotal = activeExpensesList
@@ -79,8 +81,8 @@ const getMonthlyMetrics = (txs: CashTransaction[], userSettings: UserSettings): 
     .reduce((acc, curr) => acc + curr.amount, 0);
 
   let status = 'Sangat Frugal';
-  if (usedPercentage > 100) status = 'Over Budget!';
-  else if (usedPercentage > 75) status = 'Waspada Overbudget';
+  if (budget > 0 && usedPercentage > 100) status = 'Over Budget!';
+  else if (budget > 0 && usedPercentage > 75) status = 'Waspada Overbudget';
 
   return {
     totalExpense,
@@ -96,6 +98,7 @@ const getMonthlyMetrics = (txs: CashTransaction[], userSettings: UserSettings): 
 
 export default function Home() {
   const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
+  const [isInitializing, setIsInitializing] = useState(true);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   // Core Data States
@@ -104,7 +107,7 @@ export default function Home() {
   const [settings, setSettings] = useState<UserSettings>({
     wallets: [{ id: 'w-main', name: 'Dompet Utama', type: 'BANK', balance: 0 }],
     incomeTemplates: [],
-    monthlyExpenseBudget: 5000000,
+    monthlyExpenseBudget: 0,
   });
 
   const [score, setScore] = useState<FinancialLivingScore>({
@@ -194,12 +197,15 @@ export default function Home() {
     refreshMarketData(loadedTxs, loadedInvestments, loadedSettings);
   };
 
-  // Initial Load with Cloud Sync support
+  // Initial Load with Auth Wall check
   useEffect(() => {
     const initApp = async () => {
       const activeUser = await getAppwriteUser();
       setCurrentUser(activeUser);
-      await loadUserData(activeUser);
+      if (activeUser) {
+        await loadUserData(activeUser);
+      }
+      setIsInitializing(false);
     };
 
     initApp();
@@ -214,8 +220,9 @@ export default function Home() {
   const handleLogout = async () => {
     await logoutUser();
     setCurrentUser(null);
+    setTransactions([]);
+    setInvestments([]);
     showToast('Anda telah keluar dari akun.', 'info');
-    await loadUserData(null);
   };
 
   const refreshMarketData = async (
@@ -385,6 +392,25 @@ export default function Home() {
     setPendingScanData(null);
     setIsInteractiveFormOpen(true);
   };
+
+  // Render Loader during initial Auth check
+  if (isInitializing) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center p-4">
+        <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-500 flex items-center justify-center animate-spin mb-4">
+          <Wallet className="w-6 h-6" />
+        </div>
+        <p className="text-sm font-bold text-slate-500 dark:text-slate-400 animate-pulse">
+          Memuat Frugalify...
+        </p>
+      </div>
+    );
+  }
+
+  // Mandatory Auth Screen if not logged in
+  if (!currentUser) {
+    return <AuthScreen onLoginSuccess={handleLoginSuccess} />;
+  }
 
   return (
     <div className="min-h-screen pb-24 sm:pb-28 transition-colors duration-300">
