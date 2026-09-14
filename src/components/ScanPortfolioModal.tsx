@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { X, Upload, TrendingUp, Sparkles, Loader2 } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { X, Upload, TrendingUp, Sparkles, Loader2, Camera, Image as ImageIcon } from 'lucide-react';
 import { analyzePortfolioImage } from '@/lib/gemini';
 
 interface ScanPortfolioModalProps {
@@ -19,6 +19,9 @@ export const ScanPortfolioModal: React.FC<ScanPortfolioModalProps> = ({
   const [mimeType, setMimeType] = useState<string>('image/jpeg');
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
 
@@ -81,27 +84,55 @@ export const ScanPortfolioModal: React.FC<ScanPortfolioModalProps> = ({
           </button>
         </div>
 
+        {/* Upload Area: Split Camera vs Gallery Options */}
         <div className="mb-4">
           {!selectedImage ? (
-            <label className="flex flex-col items-center justify-center w-full h-52 border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-teal-500 rounded-2xl cursor-pointer bg-slate-50 dark:bg-slate-900/60 hover:bg-slate-100 dark:hover:bg-slate-900 transition-all group">
-              <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center px-4">
-                <div className="w-12 h-12 rounded-2xl bg-slate-200/80 dark:bg-slate-800 group-hover:bg-teal-500/20 flex items-center justify-center text-slate-500 dark:text-slate-400 group-hover:text-teal-500 transition-all mb-3">
-                  <Upload className="w-6 h-6" />
-                </div>
-                <p className="text-xs font-extrabold text-slate-800 dark:text-slate-200 mb-1">
-                  Upload Screenshot Portofolio Investasi
-                </p>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400">
-                  AI akan mengambil Kode Emiten (BBCA, BBRI, dll), Lot & Price
-                </p>
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                {/* Option 1: Kamera Smartphone */}
+                <button
+                  type="button"
+                  onClick={() => cameraInputRef.current?.click()}
+                  className="flex flex-col items-center justify-center p-5 rounded-2xl border-2 border-dashed border-teal-500/40 hover:border-teal-500 bg-teal-500/5 hover:bg-teal-500/10 transition-all text-center group cursor-pointer"
+                >
+                  <div className="w-12 h-12 rounded-2xl bg-teal-500/20 text-teal-600 dark:text-teal-400 group-hover:scale-110 flex items-center justify-center transition-all mb-2 shadow-md">
+                    <Camera className="w-6 h-6" />
+                  </div>
+                  <span className="text-xs font-extrabold text-slate-900 dark:text-white mb-0.5">Ambil Kamera</span>
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Foto Langsung HP</span>
+                </button>
+
+                {/* Option 2: Galeri Smartphone */}
+                <button
+                  type="button"
+                  onClick={() => galleryInputRef.current?.click()}
+                  className="flex flex-col items-center justify-center p-5 rounded-2xl border-2 border-dashed border-emerald-500/40 hover:border-emerald-500 bg-emerald-500/5 hover:bg-emerald-500/10 transition-all text-center group cursor-pointer"
+                >
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 flex items-center justify-center transition-all mb-2 shadow-md">
+                    <ImageIcon className="w-6 h-6" />
+                  </div>
+                  <span className="text-xs font-extrabold text-slate-900 dark:text-white mb-0.5">Pilih Galeri</span>
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Album & File HP</span>
+                </button>
               </div>
+
+              {/* Hidden File Inputs */}
               <input
+                ref={cameraInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+              <input
+                ref={galleryInputRef}
                 type="file"
                 accept="image/*"
                 onChange={handleFileChange}
                 className="hidden"
               />
-            </label>
+            </div>
           ) : (
             <div className="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-900 max-h-64 flex items-center justify-center">
               <img
