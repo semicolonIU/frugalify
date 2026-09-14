@@ -130,6 +130,7 @@ export default function Home() {
   const [isScanPortfolioOpen, setIsScanPortfolioOpen] = useState(false);
   const [isInteractiveFormOpen, setIsInteractiveFormOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [settingsInitialTab, setSettingsInitialTab] = useState<'WALLETS' | 'SALARY' | 'BUDGET'>('WALLETS');
   const [isRecapOpen, setIsRecapOpen] = useState(false);
   const [pendingScanData, setPendingScanData] = useState<Partial<CashTransaction> | null>(null);
 
@@ -460,8 +461,7 @@ export default function Home() {
       {/* Top Header Bar */}
       <Header
         score={score}
-        onOpenSettings={() => setIsSettingsOpen(true)}
-        onOpenRecap={() => setIsRecapOpen(true)}
+        onOpenSettings={() => { setSettingsInitialTab('WALLETS'); setIsSettingsOpen(true); }}
         onRefreshData={() => refreshMarketData(transactions, investments, settings)}
         isRefreshing={isRefreshing}
         currentUser={currentUser}
@@ -507,8 +507,8 @@ export default function Home() {
       <FloatingBottomNav
         onOpenAIScanPicker={() => setIsAIScanPickerOpen(true)}
         onOpenManualExpense={() => handleManualExpenseTrigger()}
-        onOpenSettings={() => setIsSettingsOpen(true)}
-        onOpenRecap={() => setIsRecapOpen(true)}
+        onOpenWallet={() => { setSettingsInitialTab('WALLETS'); setIsSettingsOpen(true); }}
+        onOpenBudget={() => { setSettingsInitialTab('BUDGET'); setIsSettingsOpen(true); }}
       />
 
       {/* Auth Modal (Login / Register) */}
@@ -573,6 +573,7 @@ export default function Home() {
             onClaimSalary={handleClaimSalary}
             showToast={showToast}
             totalMonthlyIncome={activeIncome}
+            initialTab={settingsInitialTab}
           />
         );
       })()}

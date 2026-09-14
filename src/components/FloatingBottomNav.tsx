@@ -1,20 +1,20 @@
 'use client';
 
 import React from 'react';
-import { Sparkles, Plus, Sliders, BarChart3, Wallet } from 'lucide-react';
+import { Sparkles, Plus, Sliders, Wallet } from 'lucide-react';
 
 interface FloatingBottomNavProps {
   onOpenAIScanPicker: () => void;
   onOpenManualExpense: () => void;
-  onOpenRecap: () => void;
-  onOpenSettings: () => void;
+  onOpenWallet: () => void;
+  onOpenBudget: () => void;
 }
 
 export const FloatingBottomNav: React.FC<FloatingBottomNavProps> = ({
   onOpenAIScanPicker,
   onOpenManualExpense,
-  onOpenRecap,
-  onOpenSettings,
+  onOpenWallet,
+  onOpenBudget,
 }) => {
   return (
     <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-[94%] max-w-lg">
@@ -34,15 +34,15 @@ export const FloatingBottomNav: React.FC<FloatingBottomNavProps> = ({
           </span>
         </button>
 
-        {/* 2. Left Item 2: Rekap Bulanan */}
+        {/* 2. Left Item 2: Dompet */}
         <button
-          onClick={onOpenRecap}
-          className="flex flex-col items-center justify-center p-2 rounded-2xl hover:bg-rose-500/15 text-slate-600 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-400 transition-all active:scale-90 group min-w-[56px]"
-          title="Rekap Pengeluaran Bulanan"
+          onClick={onOpenWallet}
+          className="flex flex-col items-center justify-center p-2 rounded-2xl hover:bg-cyan-500/15 text-slate-600 dark:text-slate-300 hover:text-cyan-600 dark:hover:text-cyan-400 transition-all active:scale-90 group min-w-[56px]"
+          title="Rekening & Wallet"
         >
-          <BarChart3 className="w-5 h-5 group-hover:scale-110 transition-transform text-rose-500" />
-          <span className="text-[10px] font-bold mt-0.5 text-slate-600 dark:text-slate-400 group-hover:text-rose-600 dark:group-hover:text-rose-400">
-            Rekap
+          <Wallet className="w-5 h-5 group-hover:scale-110 transition-transform text-cyan-500" />
+          <span className="text-[10px] font-bold mt-0.5 text-slate-600 dark:text-slate-400 group-hover:text-cyan-600 dark:group-hover:text-cyan-400">
+            Dompet
           </span>
         </button>
 
@@ -63,27 +63,30 @@ export const FloatingBottomNav: React.FC<FloatingBottomNavProps> = ({
           </button>
         </div>
 
-        {/* 4. Right Item 1: Multi-Wallet */}
+        {/* 4. Right Item 1: Budget */}
         <button
-          onClick={onOpenSettings}
-          className="flex flex-col items-center justify-center p-2 rounded-2xl hover:bg-cyan-500/15 text-slate-600 dark:text-slate-300 hover:text-cyan-600 dark:hover:text-cyan-400 transition-all active:scale-90 group min-w-[56px]"
-          title="Pengaturan Saldo & Multi-Wallet"
-        >
-          <Wallet className="w-5 h-5 group-hover:scale-110 transition-transform text-cyan-500" />
-          <span className="text-[10px] font-bold mt-0.5 text-slate-600 dark:text-slate-400 group-hover:text-cyan-600 dark:group-hover:text-cyan-400">
-            Dompet
-          </span>
-        </button>
-
-        {/* 5. Right Item 2: Target Budget */}
-        <button
-          onClick={onOpenSettings}
+          onClick={onOpenBudget}
           className="flex flex-col items-center justify-center p-2 rounded-2xl hover:bg-amber-500/15 text-slate-600 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 transition-all active:scale-90 group min-w-[56px]"
-          title="Pengaturan Batas Budget Bulanan"
+          title="Batas Budget Bulanan"
         >
           <Sliders className="w-5 h-5 group-hover:scale-110 transition-transform text-amber-500" />
           <span className="text-[10px] font-bold mt-0.5 text-slate-600 dark:text-slate-400 group-hover:text-amber-600 dark:group-hover:text-amber-400">
             Budget
+          </span>
+        </button>
+
+        {/* 5. Right Item 2: Settings */}
+        <button
+          onClick={onOpenWallet}
+          className="flex flex-col items-center justify-center p-2 rounded-2xl hover:bg-slate-200/80 dark:hover:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-all active:scale-90 group min-w-[56px]"
+          title="Pengaturan"
+        >
+          <svg className="w-5 h-5 group-hover:scale-110 transition-transform text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 011.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.107 1.204.165.397.505.71.93.78l.893.15c.543.09.94.56.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.893.149c-.425.07-.765.383-.93.78-.165.398-.143.854.107 1.204l.527.738c.32.447.269 1.06-.12 1.45l-.774.773a1.125 1.125 0 01-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.107-.397.165-.71.505-.781.929l-.149.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.148-.894c-.071-.424-.384-.764-.781-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-1.06.269-1.45-.12l-.773-.774a1.125 1.125 0 01-.12-1.45l.527-.737c.25-.35.273-.806.108-1.204-.165-.397-.505-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.109v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.424-.07.765-.383.93-.78.165-.398.143-.854-.107-1.204l-.527-.738a1.125 1.125 0 01.12-1.45l.773-.773a1.125 1.125 0 011.45-.12l.737.527c.35.25.807.272 1.204.107.397-.165.71-.505.78-.929l.15-.894z" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          <span className="text-[10px] font-bold mt-0.5 text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white">
+            Lainnya
           </span>
         </button>
 

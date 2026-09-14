@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Wallet, Sparkles, Settings, RefreshCw, BarChart3, Sun, Moon, Eye, EyeOff, Activity, User, LogOut, LogIn } from 'lucide-react';
+import { Wallet, Settings, RefreshCw, Sun, Moon, Eye, EyeOff, Activity, LogOut, LogIn } from 'lucide-react';
 import { FinancialLivingScore, AppUser } from '@/lib/types';
 import { useTheme } from '@/components/ThemeProvider';
 import { usePrivacy } from '@/components/PrivacyProvider';
@@ -11,7 +11,6 @@ interface HeaderProps {
   score: FinancialLivingScore;
   onOpenSettings: () => void;
   onRefreshData: () => void;
-  onOpenRecap: () => void;
   isRefreshing: boolean;
   currentUser: AppUser | null;
   onOpenAuth: () => void;
@@ -21,7 +20,6 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({
   score,
   onOpenSettings,
-  onOpenRecap,
   onRefreshData,
   isRefreshing,
   currentUser,
@@ -72,35 +70,46 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="relative">
             {currentUser ? (
               <div className="relative">
+                {/* Avatar Chip — mobile: hanya ikon inisial, sm+: tampilkan nama */}
                 <button
                   onClick={() => setShowUserDropdown(!showUserDropdown)}
-                  className="flex items-center gap-1.5 px-2.5 py-1 sm:py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition-all text-xs font-bold text-slate-800 dark:text-slate-200"
+                  className="flex items-center gap-1.5 pl-1 pr-2 sm:px-2.5 py-1 sm:py-1.5 rounded-full sm:rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition-all"
+                  title={currentUser.name}
                 >
-                  <div className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[10px] font-black uppercase shrink-0">
+                  <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-500 text-white flex items-center justify-center text-[11px] font-black uppercase shrink-0 shadow-sm shadow-emerald-500/30">
                     {currentUser.name ? currentUser.name.charAt(0) : 'U'}
                   </div>
-                  <span className="max-w-[70px] sm:max-w-[110px] truncate">{currentUser.name}</span>
+                  <span className="hidden sm:block max-w-[100px] truncate text-xs font-bold text-slate-800 dark:text-slate-200">{currentUser.name}</span>
                 </button>
 
-                {/* User Dropdown */}
+                {/* User Dropdown — right-0 di desktop, di mobile pakai right-0 juga agar tidak keluar layar */}
                 {showUserDropdown && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setShowUserDropdown(false)} />
-                    <div className="absolute right-0 mt-2 w-48 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl z-50 p-2 text-xs">
-                      <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800">
-                        <p className="font-bold text-slate-900 dark:text-white truncate">{currentUser.name}</p>
-                        <p className="text-[10px] text-slate-400 truncate">{currentUser.email}</p>
+                    <div className="absolute right-0 top-full mt-2 w-56 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl shadow-slate-900/20 z-50 overflow-hidden">
+                      {/* Header info user */}
+                      <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 border-b border-slate-100 dark:border-slate-800">
+                        <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-500 text-white flex items-center justify-center text-base font-black uppercase shrink-0 shadow-md shadow-emerald-500/30">
+                          {currentUser.name ? currentUser.name.charAt(0) : 'U'}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-slate-900 dark:text-white truncate">{currentUser.name}</p>
+                          <p className="text-[10px] text-slate-400 truncate">{currentUser.email}</p>
+                        </div>
                       </div>
-                      <button
-                        onClick={() => {
-                          setShowUserDropdown(false);
-                          onLogout();
-                        }}
-                        className="w-full mt-1 flex items-center gap-2 px-3 py-2 rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 font-bold transition-colors"
-                      >
-                        <LogOut className="w-3.5 h-3.5" />
-                        <span>Keluar (Logout)</span>
-                      </button>
+                      {/* Actions */}
+                      <div className="p-2">
+                        <button
+                          onClick={() => {
+                            setShowUserDropdown(false);
+                            onLogout();
+                          }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-bold transition-colors"
+                        >
+                          <LogOut className="w-4 h-4 shrink-0" />
+                          <span>Keluar (Logout)</span>
+                        </button>
+                      </div>
                     </div>
                   </>
                 )}
@@ -155,14 +164,7 @@ export const Header: React.FC<HeaderProps> = ({
               )}
             </button>
 
-            {/* Monthly Recap Modal Button */}
-            <button
-              onClick={onOpenRecap}
-              className="p-1.5 sm:p-2 rounded-xl text-slate-500 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400 hover:bg-rose-500/10 transition-all active:scale-90"
-              title="Rekap Pengeluaran Bulanan"
-            >
-              <BarChart3 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            </button>
+
 
             {/* Live Data Refresh Button */}
             <button

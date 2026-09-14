@@ -29,6 +29,7 @@ interface SettingsModalProps {
   onClaimSalary: (template: IncomeTemplate) => void;
   showToast?: (message: string, type?: 'success' | 'error' | 'info') => void;
   totalMonthlyIncome?: number;
+  initialTab?: 'WALLETS' | 'SALARY' | 'BUDGET';
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -39,6 +40,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onClaimSalary,
   showToast,
   totalMonthlyIncome = 0,
+  initialTab = 'WALLETS',
 }) => {
   const { formatCurrency } = usePrivacy();
   const [activeTab, setActiveTab] = useState<'WALLETS' | 'SALARY' | 'BUDGET'>('WALLETS');
@@ -65,7 +67,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         setNewSalaryWalletId(settings.wallets[0].id);
       }
     }
-  }, [settings, isOpen]);
+    // Setiap kali modal dibuka, set ke tab yang diminta
+    if (isOpen) {
+      setActiveTab(initialTab);
+    }
+  }, [settings, isOpen, initialTab]);
 
   if (!isOpen) return null;
 
