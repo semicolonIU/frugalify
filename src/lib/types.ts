@@ -96,3 +96,11 @@ export interface FinancialQuoteResponse {
   text: string;
   author: string;
 }
+
+export interface AppUser {
+  id: string;
+  name: string;
+  email: string;
+  createdAt?: string;
+}
+

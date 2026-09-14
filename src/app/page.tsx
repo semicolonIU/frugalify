@@ -15,6 +15,7 @@ import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { ExpenseRecapModal } from '@/components/ExpenseRecapModal';
 import { AIScanPickerModal } from '@/components/AIScanPickerModal';
 import { FinancialScoreInfoModal } from '@/components/FinancialScoreInfoModal';
+import { AuthModal } from '@/components/AuthModal';
 
 import {
   CashTransaction,
@@ -24,6 +25,7 @@ import {
   FinancialQuoteResponse,
   IncomeTemplate,
   AssetClass,
+  AppUser,
 } from '@/lib/types';
 import {
   getStoredTransactions,
@@ -41,6 +43,8 @@ import { calculateFinancialLivingScore } from '@/lib/frugalScore';
 import { fetchLiveAssetPrices, recalculateInvestmentsWithLivePrices } from '@/lib/stocks';
 import {
   isAppwriteConfigured,
+  getAppwriteUser,
+  logoutUser,
   fetchAppwriteTransactions,
   syncSaveAppwriteTransaction,
   syncDeleteAppwriteTransaction,
@@ -65,23 +69,18 @@ const getMonthlyMetrics = (txs: CashTransaction[], userSettings: UserSettings): 
   const activeIncomesList = currentMonthIncomes.length > 0 ? currentMonthIncomes : txs.filter(t => t.type === 'INCOME');
   const totalIncome = activeIncomesList.reduce((acc, curr) => acc + curr.amount, 0);
 
+  const budget = userSettings.monthlyExpenseBudget || 5000000;
+  const remainingBudget = Math.max(0, budget - totalExpense);
+  const usedPercentage = (totalExpense / budget) * 100;
+  const dailyAvg = totalExpense / Math.max(1, new Date().getDate());
+
   const shopeeTotal = activeExpensesList
-    .filter(e => e.platform === 'Screenshot Shopee' || e.category.toLowerCase().includes('shopee') || e.category.toLowerCase().includes('marketplace') || e.category.toLowerCase().includes('e-commerce'))
+    .filter(t => t.platform === 'Screenshot Shopee' || t.title.toLowerCase().includes('shopee'))
     .reduce((acc, curr) => acc + curr.amount, 0);
 
-  const currentDay = new Date().getDate() || 1;
-  const dailyAvg = Math.round(totalExpense / currentDay);
-
-  const budget = userSettings.monthlyExpenseBudget || 5000000;
-  const remainingBudget = budget - totalExpense;
-  const usedPercentage = Math.round((totalExpense / budget) * 100);
-
-  let status = 'AMAN';
-  if (totalExpense > budget) {
-    status = 'OVERBUDGET';
-  } else if (totalExpense > budget * 0.8) {
-    status = 'WASPADA';
-  }
+  let status = 'Sangat Frugal';
+  if (usedPercentage > 100) status = 'Over Budget!';
+  else if (usedPercentage > 75) status = 'Waspada Overbudget';
 
   return {
     totalExpense,
@@ -91,28 +90,32 @@ const getMonthlyMetrics = (txs: CashTransaction[], userSettings: UserSettings): 
     usedPercentage,
     shopeeTotal,
     dailyAvg,
-    status
+    status,
   };
 };
 
 export default function Home() {
+  const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
+
+  // Core Data States
   const [transactions, setTransactions] = useState<CashTransaction[]>([]);
   const [investments, setInvestments] = useState<InvestmentAsset[]>([]);
   const [settings, setSettings] = useState<UserSettings>({
-    wallets: [],
+    wallets: [{ id: 'w-main', name: 'Dompet Utama', type: 'BANK', balance: 0 }],
     incomeTemplates: [],
     monthlyExpenseBudget: 5000000,
   });
 
   const [score, setScore] = useState<FinancialLivingScore>({
-    score: 82,
+    score: 85,
     status: 'Sangat Sehat & Frugal',
     budgetScore: 35,
-    impulseScore: 27,
-    investmentScore: 20,
-    savingsRatio: 65,
-    shopeeImpulseRatio: 12,
-    expenseToBudgetRatio: 45,
+    impulseScore: 25,
+    investmentScore: 25,
+    savingsRatio: 30,
+    shopeeImpulseRatio: 5,
+    expenseToBudgetRatio: 40,
     recommendation: 'Disiplin frugal living yang baik. Alokasikan terus ke portofolio investasi!',
   });
   const [quote, setQuote] = useState<FinancialQuoteResponse | null>(null);
@@ -151,47 +154,69 @@ export default function Home() {
     setToasts(prev => prev.filter(t => t.id !== id));
   };
 
+  const loadUserData = async (user: AppUser | null) => {
+    let loadedTxs = getStoredTransactions();
+    let loadedInvestments = getStoredInvestments();
+    let loadedSettings = getStoredSettings();
+
+    if (isAppwriteConfigured) {
+      try {
+        const [cloudTxs, cloudInvestments, cloudSettings] = await Promise.all([
+          fetchAppwriteTransactions(user?.id),
+          fetchAppwriteInvestments(user?.id),
+          fetchAppwriteSettings(user?.id),
+        ]);
+
+        if (cloudTxs && cloudTxs.length > 0) {
+          loadedTxs = cloudTxs;
+          saveStoredTransactions(cloudTxs);
+        }
+        if (cloudInvestments && cloudInvestments.length > 0) {
+          loadedInvestments = cloudInvestments;
+          saveStoredInvestments(cloudInvestments);
+        }
+        if (cloudSettings && cloudSettings.wallets && cloudSettings.wallets.length > 0) {
+          loadedSettings = cloudSettings;
+          saveStoredSettings(cloudSettings);
+        }
+      } catch (err) {
+        console.warn('Appwrite Cloud sync skipped/failed on load:', err);
+      }
+    }
+
+    setTransactions(loadedTxs);
+    setInvestments(loadedInvestments);
+    setSettings(loadedSettings);
+
+    const calculatedScore = calculateFinancialLivingScore(loadedTxs, loadedInvestments, loadedSettings);
+    setScore(calculatedScore);
+
+    refreshMarketData(loadedTxs, loadedInvestments, loadedSettings);
+  };
+
   // Initial Load with Cloud Sync support
   useEffect(() => {
     const initApp = async () => {
-      let loadedTxs = getStoredTransactions();
-      let loadedInvestments = getStoredInvestments();
-      let loadedSettings = getStoredSettings();
-
-      if (isAppwriteConfigured) {
-        try {
-          const [cloudTxs, cloudInvestments, cloudSettings] = await Promise.all([
-            fetchAppwriteTransactions(),
-            fetchAppwriteInvestments(),
-            fetchAppwriteSettings(),
-          ]);
-
-          if (cloudTxs && cloudTxs.length > 0) {
-            loadedTxs = cloudTxs;
-            saveStoredTransactions(cloudTxs);
-          }
-          if (cloudInvestments && cloudInvestments.length > 0) {
-            loadedInvestments = cloudInvestments;
-            saveStoredInvestments(cloudInvestments);
-          }
-          if (cloudSettings && cloudSettings.wallets && cloudSettings.wallets.length > 0) {
-            loadedSettings = cloudSettings;
-            saveStoredSettings(cloudSettings);
-          }
-        } catch (err) {
-          console.warn('Appwrite Cloud sync skipped/failed on initial load:', err);
-        }
-      }
-
-      setTransactions(loadedTxs);
-      setInvestments(loadedInvestments);
-      setSettings(loadedSettings);
-
-      refreshMarketData(loadedTxs, loadedInvestments, loadedSettings);
+      const activeUser = await getAppwriteUser();
+      setCurrentUser(activeUser);
+      await loadUserData(activeUser);
     };
 
     initApp();
   }, []);
+
+  const handleLoginSuccess = async (user: AppUser) => {
+    setCurrentUser(user);
+    showToast(`🎉 Selamat datang kembali, ${user.name}!`, 'success');
+    await loadUserData(user);
+  };
+
+  const handleLogout = async () => {
+    await logoutUser();
+    setCurrentUser(null);
+    showToast('Anda telah keluar dari akun.', 'info');
+    await loadUserData(null);
+  };
 
   const refreshMarketData = async (
     currentTxs: CashTransaction[],
@@ -205,10 +230,13 @@ export default function Home() {
       setInvestments(updatedInvestments);
       saveStoredInvestments(updatedInvestments);
 
-      const calculatedScore = calculateFinancialLivingScore(currentTxs, updatedInvestments, currentSettings);
-      setScore(calculatedScore);
+      if (isAppwriteConfigured) {
+        syncSaveAppwriteInvestments(updatedInvestments, currentUser?.id);
+      }
 
-      // Fetch dynamic quote based on Card Pengeluaran Bulan Ini metrics
+      const newScore = calculateFinancialLivingScore(currentTxs, updatedInvestments, currentSettings);
+      setScore(newScore);
+
       const metrics = getMonthlyMetrics(currentTxs, currentSettings);
       fetchQuote(metrics);
     } catch (err) {
@@ -216,20 +244,6 @@ export default function Home() {
     } finally {
       setIsRefreshing(false);
     }
-  };
-
-  const handleResetData = () => {
-    setConfirmState({
-      isOpen: true,
-      title: 'Reset Semua Data',
-      message: 'PERINGATAN: Aksi ini akan menghapus semua data transaksi, portofolio saham, dan pengaturan wallet Anda.',
-      confirmText: 'Reset Total',
-      confirmVariant: 'danger',
-      action: () => {
-        localStorage.clear();
-        window.location.reload();
-      }
-    });
   };
 
   const fetchQuote = async (metrics: MonthlyExpenseMetrics) => {
@@ -273,7 +287,7 @@ export default function Home() {
     setInvestments(updatedInvestments);
     
     if (isAppwriteConfigured) {
-      syncSaveAppwriteInvestments(updatedInvestments);
+      syncSaveAppwriteInvestments(updatedInvestments, currentUser?.id);
     }
 
     const newScore = calculateFinancialLivingScore(transactions, updatedInvestments, settings);
@@ -289,8 +303,8 @@ export default function Home() {
     setSettings(updatedSettings);
 
     if (isAppwriteConfigured) {
-      syncSaveAppwriteTransaction(transaction);
-      syncSaveAppwriteSettings(updatedSettings);
+      syncSaveAppwriteTransaction(transaction, currentUser?.id);
+      syncSaveAppwriteSettings(updatedSettings, currentUser?.id);
     }
 
     const newScore = calculateFinancialLivingScore(updatedTxs, investments, updatedSettings);
@@ -316,7 +330,7 @@ export default function Home() {
 
         if (isAppwriteConfigured) {
           syncDeleteAppwriteTransaction(id);
-          syncSaveAppwriteSettings(updatedSettings);
+          syncSaveAppwriteSettings(updatedSettings, currentUser?.id);
         }
 
         const newScore = calculateFinancialLivingScore(updatedTxs, investments, updatedSettings);
@@ -333,7 +347,7 @@ export default function Home() {
     saveStoredSettings(newSettings);
 
     if (isAppwriteConfigured) {
-      syncSaveAppwriteSettings(newSettings);
+      syncSaveAppwriteSettings(newSettings, currentUser?.id);
     }
 
     const newScore = calculateFinancialLivingScore(transactions, investments, newSettings);
@@ -360,7 +374,7 @@ export default function Home() {
     setInvestments(updatedInvestments);
 
     if (isAppwriteConfigured) {
-      syncSaveAppwriteInvestments(updatedInvestments);
+      syncSaveAppwriteInvestments(updatedInvestments, currentUser?.id);
     }
 
     const newScore = calculateFinancialLivingScore(transactions, updatedInvestments, settings);
@@ -373,7 +387,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen pb-24 sm:pb-28">
+    <div className="min-h-screen pb-24 sm:pb-28 transition-colors duration-300">
       {/* Top Header Bar */}
       <Header
         score={score}
@@ -381,6 +395,9 @@ export default function Home() {
         onOpenRecap={() => setIsRecapOpen(true)}
         onRefreshData={() => refreshMarketData(transactions, investments, settings)}
         isRefreshing={isRefreshing}
+        currentUser={currentUser}
+        onOpenAuth={() => setIsAuthOpen(true)}
+        onLogout={handleLogout}
       />
 
       {/* Main Container */}
@@ -395,17 +412,16 @@ export default function Home() {
           isLoading={isQuoteLoading}
         />
 
-        {/* Macro Summary Cards */}
+        {/* Top Macro Summary Cards */}
         <MacroCards
-          score={score}
-          settings={settings}
-          investments={investments}
           transactions={transactions}
+          investments={investments}
+          settings={settings}
+          score={score}
           onOpenScoreInfo={() => setIsScoreInfoOpen(true)}
-          onOpenRecap={() => setIsRecapOpen(true)}
         />
 
-        {/* Dual-Column Main Dashboard Layout */}
+        {/* Dashboard 2 Columns */}
         <DualColumnDashboard
           transactions={transactions}
           investments={investments}
@@ -415,25 +431,25 @@ export default function Home() {
           onOpenScanPortfolio={() => setIsScanPortfolioOpen(true)}
           onOpenManualTransaction={handleManualExpenseTrigger}
           onAddInvestment={handleAddInvestmentManual}
-          isAssetsLoading={isRefreshing}
         />
       </main>
 
-      {/* Floating Bottom Navigation Bar for Mobile */}
+      {/* Floating Bottom Navigation */}
       <FloatingBottomNav
         onOpenAIScanPicker={() => setIsAIScanPickerOpen(true)}
-        onOpenManualExpense={handleManualExpenseTrigger}
-        onOpenRecap={() => setIsRecapOpen(true)}
+        onOpenManualExpense={() => handleManualExpenseTrigger()}
         onOpenSettings={() => setIsSettingsOpen(true)}
+        onOpenRecap={() => setIsRecapOpen(true)}
       />
 
-      {/* Modals */}
-      <FinancialScoreInfoModal
-        isOpen={isScoreInfoOpen}
-        onClose={() => setIsScoreInfoOpen(false)}
-        score={score}
+      {/* Auth Modal (Login / Register) */}
+      <AuthModal
+        isOpen={isAuthOpen}
+        onClose={() => setIsAuthOpen(false)}
+        onSuccess={handleLoginSuccess}
       />
 
+      {/* AI Scan Choice Picker Modal */}
       <AIScanPickerModal
         isOpen={isAIScanPickerOpen}
         onClose={() => setIsAIScanPickerOpen(false)}
@@ -441,6 +457,14 @@ export default function Home() {
         onSelectScanPortfolio={() => setIsScanPortfolioOpen(true)}
       />
 
+      {/* Score Info Modal */}
+      <FinancialScoreInfoModal
+        isOpen={isScoreInfoOpen}
+        onClose={() => setIsScoreInfoOpen(false)}
+        score={score}
+      />
+
+      {/* Scan Modals */}
       <ScanReceiptModal
         isOpen={isScanReceiptOpen}
         onClose={() => setIsScanReceiptOpen(false)}

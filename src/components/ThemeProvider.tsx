@@ -13,18 +13,17 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [theme, setThemeState] = useState<Theme>('dark');
+  const [theme, setThemeState] = useState<Theme>('light');
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    // Read saved theme from localStorage or system preference
+    // Read saved theme from localStorage or default to light
     const savedTheme = localStorage.getItem('frugalify_theme') as Theme | null;
     if (savedTheme === 'light' || savedTheme === 'dark') {
       setThemeState(savedTheme);
       applyTheme(savedTheme);
     } else {
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      const initialTheme = prefersDark ? 'dark' : 'dark'; // Default to dark if not set, or system
+      const initialTheme = 'light'; // Default primary theme is Light
       setThemeState(initialTheme);
       applyTheme(initialTheme);
     }

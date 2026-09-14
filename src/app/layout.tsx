@@ -23,7 +23,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="id" className={`dark ${plusJakartaSans.variable}`} suppressHydrationWarning>
+    <html lang="id" className={`light ${plusJakartaSans.variable}`} suppressHydrationWarning>
       <body className={`${plusJakartaSans.className} min-h-screen antialiased selection:bg-emerald-500 selection:text-slate-950 transition-colors duration-300 font-sans`}>
         <ThemeProvider>
           <PrivacyProvider>

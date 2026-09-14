@@ -1,12 +1,10 @@
 'use client';
 
-import React from 'react';
-import { Wallet, Sparkles, Settings, ShieldCheck, RefreshCw, BarChart3, Sun, Moon, Eye, EyeOff, Activity } from 'lucide-react';
-import { FinancialLivingScore } from '@/lib/types';
-import { isGeminiConfigured } from '@/lib/gemini';
+import React, { useState } from 'react';
+import { Wallet, Sparkles, Settings, RefreshCw, BarChart3, Sun, Moon, Eye, EyeOff, Activity, User, LogOut, LogIn } from 'lucide-react';
+import { FinancialLivingScore, AppUser } from '@/lib/types';
 import { useTheme } from '@/components/ThemeProvider';
 import { usePrivacy } from '@/components/PrivacyProvider';
-
 import { isAppwriteConfigured } from '@/lib/appwrite';
 
 interface HeaderProps {
@@ -15,6 +13,9 @@ interface HeaderProps {
   onRefreshData: () => void;
   onOpenRecap: () => void;
   isRefreshing: boolean;
+  currentUser: AppUser | null;
+  onOpenAuth: () => void;
+  onLogout: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -23,9 +24,13 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenRecap,
   onRefreshData,
   isRefreshing,
+  currentUser,
+  onOpenAuth,
+  onLogout,
 }) => {
   const { theme, toggleTheme } = useTheme();
   const { isPrivacyMode, togglePrivacyMode } = usePrivacy();
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
 
   const getScoreColorBadge = () => {
     if (score.score >= 80) return 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30';
@@ -61,15 +66,55 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Right: Actions Glass Toolbar */}
-        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           
-          {/* Appwrite Cloud Sync Badge */}
-          {isAppwriteConfigured && (
-            <div className="hidden md:flex items-center space-x-1 px-2.5 py-1 rounded-full bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20 text-xs font-extrabold">
-              <Sparkles className="w-3.5 h-3.5 text-cyan-500 animate-pulse" />
-              <span>Appwrite Sync</span>
-            </div>
-          )}
+          {/* User Auth Chip / Button */}
+          <div className="relative">
+            {currentUser ? (
+              <div className="relative">
+                <button
+                  onClick={() => setShowUserDropdown(!showUserDropdown)}
+                  className="flex items-center gap-1.5 px-2.5 py-1 sm:py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition-all text-xs font-bold text-slate-800 dark:text-slate-200"
+                >
+                  <div className="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[10px] font-black uppercase shrink-0">
+                    {currentUser.name ? currentUser.name.charAt(0) : 'U'}
+                  </div>
+                  <span className="max-w-[70px] sm:max-w-[110px] truncate">{currentUser.name}</span>
+                </button>
+
+                {/* User Dropdown */}
+                {showUserDropdown && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowUserDropdown(false)} />
+                    <div className="absolute right-0 mt-2 w-48 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl z-50 p-2 text-xs">
+                      <div className="px-3 py-2 border-b border-slate-100 dark:border-slate-800">
+                        <p className="font-bold text-slate-900 dark:text-white truncate">{currentUser.name}</p>
+                        <p className="text-[10px] text-slate-400 truncate">{currentUser.email}</p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setShowUserDropdown(false);
+                          onLogout();
+                        }}
+                        className="w-full mt-1 flex items-center gap-2 px-3 py-2 rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 font-bold transition-colors"
+                      >
+                        <LogOut className="w-3.5 h-3.5" />
+                        <span>Keluar (Logout)</span>
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            ) : (
+              <button
+                onClick={onOpenAuth}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white text-xs font-bold shadow-md shadow-emerald-500/20 active:scale-95 transition-all"
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                <span>Masuk</span>
+              </button>
+            )}
+          </div>
 
           {/* Mini Mobile Score Badge */}
           <div className={`flex items-center gap-1 px-2 py-1 rounded-xl text-[10px] font-black border ${getScoreColorBadge()}`}>
