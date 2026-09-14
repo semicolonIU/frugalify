@@ -6,9 +6,9 @@ const APPWRITE_PROJECT_ID = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || '';
 const APPWRITE_DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID || '6a75bac8003d3ae867c7';
 
 const COLLECTIONS = {
-  TRANSACTIONS: 'transactions',
-  INVESTMENTS: 'investments',
-  SETTINGS: 'settings',
+  TRANSACTIONS: process.env.NEXT_PUBLIC_APPWRITE_COLLECTION_TRANSACTIONS || 'transactions',
+  INVESTMENTS: process.env.NEXT_PUBLIC_APPWRITE_COLLECTION_INVESTMENTS || 'investments',
+  SETTINGS: process.env.NEXT_PUBLIC_APPWRITE_COLLECTION_SETTINGS || 'settings',
 };
 
 export const isAppwriteConfigured = Boolean(APPWRITE_PROJECT_ID && APPWRITE_PROJECT_ID !== '');
