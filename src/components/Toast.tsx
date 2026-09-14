@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { CheckCircle2, AlertCircle, X, Info } from 'lucide-react';
+import { CheckCircle2, AlertCircle, AlertTriangle, X, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export type ToastType = 'success' | 'error' | 'info';
+export type ToastType = 'success' | 'error' | 'warning' | 'info';
 
 export interface ToastMessage {
   id: string;
@@ -32,11 +32,14 @@ export const ToastContainer: React.FC<ToastProps> = ({ toasts, removeToast }) =>
                 ? 'bg-emerald-950/80 border-emerald-500/30 text-emerald-50'
                 : toast.type === 'error'
                 ? 'bg-rose-950/80 border-rose-500/30 text-rose-50'
+                : toast.type === 'warning'
+                ? 'bg-amber-950/80 border-amber-500/30 text-amber-50'
                 : 'bg-slate-900/90 border-slate-700/80 text-slate-50'
             }`}
           >
             {toast.type === 'success' && <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />}
             {toast.type === 'error' && <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />}
+            {toast.type === 'warning' && <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0" />}
             {toast.type === 'info' && <Info className="w-5 h-5 text-cyan-400 shrink-0" />}
             
             <p className="text-sm font-medium flex-1 leading-snug">{toast.message}</p>

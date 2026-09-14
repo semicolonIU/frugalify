@@ -80,7 +80,6 @@ export async function loginUser(email: string, password: string): Promise<{ succ
   // 1. Try Appwrite Cloud
   if (account && isAppwriteConfigured) {
     try {
-      // Delete any current session first to prevent session conflict
       try {
         await account.deleteSession('current');
       } catch {}
@@ -211,7 +210,7 @@ export async function fetchAppwriteTransactions(userId?: string): Promise<CashTr
       id: doc.id || doc.$id,
       type: doc.type,
       title: doc.title,
-      amount: doc.amount,
+      amount: Number(doc.amount || 0),
       date: doc.date,
       category: doc.category,
       walletId: doc.walletId,
@@ -230,56 +229,73 @@ export async function fetchAppwriteTransactions(userId?: string): Promise<CashTr
 }
 
 /**
- * Save single CashTransaction (Scoped by User)
+ * Save single CashTransaction (Scoped by User) with robust fallback
  */
-export async function syncSaveAppwriteTransaction(tx: CashTransaction, userId?: string): Promise<boolean> {
-  if (!databases || !isAppwriteConfigured) return false;
+export async function syncSaveAppwriteTransaction(
+  tx: CashTransaction,
+  userId?: string
+): Promise<{ success: boolean; error?: string }> {
+  if (!databases || !isAppwriteConfigured) {
+    return { success: false, error: 'Appwrite tidak terkonfigurasi' };
+  }
+
+  const docId = cleanAppwriteDocId(tx.id);
+  
+  const fullPayload: any = {
+    type: tx.type,
+    title: tx.title,
+    amount: Number(tx.amount || 0),
+    date: String(tx.date || new Date().toISOString().substring(0, 10)),
+    category: String(tx.category || 'Umum'),
+    walletId: String(tx.walletId || 'w-main'),
+    toWalletId: tx.toWalletId || '',
+    platform: tx.platform || '',
+    mainAmount: Number(tx.mainAmount || 0),
+    fees: Number(tx.fees || 0),
+    discount: Number(tx.discount || 0),
+    items: tx.items ? JSON.stringify(tx.items) : '[]',
+    createdAt: tx.createdAt || new Date().toISOString(),
+  };
+  if (userId) fullPayload.userId = userId;
+
   try {
-    const docId = cleanAppwriteDocId(tx.id);
-    const payload: any = {
+    try {
+      await databases.updateDocument(APPWRITE_DATABASE_ID, COLLECTIONS.TRANSACTIONS, docId, fullPayload);
+    } catch {
+      await databases.createDocument(APPWRITE_DATABASE_ID, COLLECTIONS.TRANSACTIONS, docId, fullPayload);
+    }
+    return { success: true };
+  } catch (err1: any) {
+    console.warn('Full payload save failed, trying minimal core payload:', err1);
+
+    const corePayload: any = {
       type: tx.type,
       title: tx.title,
-      amount: tx.amount,
-      date: tx.date,
-      category: tx.category,
-      walletId: tx.walletId,
-      toWalletId: tx.toWalletId || '',
-      platform: tx.platform || '',
-      mainAmount: tx.mainAmount || 0,
-      fees: tx.fees || 0,
-      discount: tx.discount || 0,
-      items: tx.items ? JSON.stringify(tx.items) : '[]',
-      createdAt: tx.createdAt || new Date().toISOString(),
+      amount: Number(tx.amount || 0),
+      date: String(tx.date || new Date().toISOString().substring(0, 10)),
+      category: String(tx.category || 'Umum'),
+      walletId: String(tx.walletId || 'w-main'),
     };
-    if (userId) payload.userId = userId;
 
     try {
-      await databases.updateDocument(
-        APPWRITE_DATABASE_ID,
-        COLLECTIONS.TRANSACTIONS,
-        docId,
-        payload
-      );
-    } catch {
-      await databases.createDocument(
-        APPWRITE_DATABASE_ID,
-        COLLECTIONS.TRANSACTIONS,
-        docId,
-        payload
-      );
+      try {
+        await databases.updateDocument(APPWRITE_DATABASE_ID, COLLECTIONS.TRANSACTIONS, docId, corePayload);
+      } catch {
+        await databases.createDocument(APPWRITE_DATABASE_ID, COLLECTIONS.TRANSACTIONS, docId, corePayload);
+      }
+      return { success: true };
+    } catch (err2: any) {
+      console.error('Appwrite saveTransaction error:', err2);
+      return { success: false, error: err2.message || String(err2) };
     }
-    return true;
-  } catch (err) {
-    console.warn('Appwrite saveTransaction error:', err);
-    return false;
   }
 }
 
 /**
  * Delete CashTransaction from Appwrite Cloud DB
  */
-export async function syncDeleteAppwriteTransaction(id: string): Promise<boolean> {
-  if (!databases || !isAppwriteConfigured) return false;
+export async function syncDeleteAppwriteTransaction(id: string): Promise<{ success: boolean; error?: string }> {
+  if (!databases || !isAppwriteConfigured) return { success: false, error: 'Appwrite tidak terkonfigurasi' };
   try {
     const docId = cleanAppwriteDocId(id);
     await databases.deleteDocument(
@@ -287,10 +303,10 @@ export async function syncDeleteAppwriteTransaction(id: string): Promise<boolean
       COLLECTIONS.TRANSACTIONS,
       docId
     );
-    return true;
-  } catch (err) {
+    return { success: true };
+  } catch (err: any) {
     console.warn('Appwrite deleteTransaction error:', err);
-    return false;
+    return { success: false, error: err.message || String(err) };
   }
 }
 
@@ -316,13 +332,13 @@ export async function fetchAppwriteInvestments(userId?: string): Promise<Investm
       assetClass: doc.assetClass,
       ticker: doc.ticker,
       name: doc.name,
-      units: doc.units,
-      avgBuyPrice: doc.avgBuyPrice,
-      currentPrice: doc.currentPrice,
-      totalValue: doc.totalValue,
-      totalCost: doc.totalCost,
-      pnlAmount: doc.pnlAmount,
-      pnlPercentage: doc.pnlPercentage,
+      units: Number(doc.units || 0),
+      avgBuyPrice: Number(doc.avgBuyPrice || 0),
+      currentPrice: Number(doc.currentPrice || 0),
+      totalValue: Number(doc.totalValue || 0),
+      totalCost: Number(doc.totalCost || 0),
+      pnlAmount: Number(doc.pnlAmount || 0),
+      pnlPercentage: Number(doc.pnlPercentage || 0),
       updatedAt: doc.updatedAt || doc.$updatedAt,
     })) as InvestmentAsset[];
   } catch (err) {
@@ -334,8 +350,11 @@ export async function fetchAppwriteInvestments(userId?: string): Promise<Investm
 /**
  * Save InvestmentAssets to Appwrite Cloud DB
  */
-export async function syncSaveAppwriteInvestments(assets: InvestmentAsset[], userId?: string): Promise<boolean> {
-  if (!databases || !isAppwriteConfigured) return false;
+export async function syncSaveAppwriteInvestments(
+  assets: InvestmentAsset[],
+  userId?: string
+): Promise<{ success: boolean; error?: string }> {
+  if (!databases || !isAppwriteConfigured) return { success: false, error: 'Appwrite tidak terkonfigurasi' };
   try {
     for (const asset of assets) {
       const docId = cleanAppwriteDocId(asset.id);
@@ -343,13 +362,13 @@ export async function syncSaveAppwriteInvestments(assets: InvestmentAsset[], use
         assetClass: asset.assetClass,
         ticker: asset.ticker,
         name: asset.name,
-        units: asset.units,
-        avgBuyPrice: asset.avgBuyPrice,
-        currentPrice: asset.currentPrice,
-        totalValue: asset.totalValue,
-        totalCost: asset.totalCost,
-        pnlAmount: asset.pnlAmount,
-        pnlPercentage: asset.pnlPercentage,
+        units: Number(asset.units || 0),
+        avgBuyPrice: Number(asset.avgBuyPrice || 0),
+        currentPrice: Number(asset.currentPrice || 0),
+        totalValue: Number(asset.totalValue || 0),
+        totalCost: Number(asset.totalCost || 0),
+        pnlAmount: Number(asset.pnlAmount || 0),
+        pnlPercentage: Number(asset.pnlPercentage || 0),
         updatedAt: asset.updatedAt || new Date().toISOString(),
       };
       if (userId) payload.userId = userId;
@@ -370,10 +389,10 @@ export async function syncSaveAppwriteInvestments(assets: InvestmentAsset[], use
         );
       }
     }
-    return true;
-  } catch (err) {
+    return { success: true };
+  } catch (err: any) {
     console.warn('Appwrite syncSaveInvestments error:', err);
-    return false;
+    return { success: false, error: err.message || String(err) };
   }
 }
 
@@ -393,7 +412,7 @@ export async function fetchAppwriteSettings(userId?: string): Promise<UserSettin
     return {
       wallets: doc.wallets ? JSON.parse(doc.wallets) : [],
       incomeTemplates: doc.incomeTemplates ? JSON.parse(doc.incomeTemplates) : [],
-      monthlyExpenseBudget: doc.monthlyExpenseBudget || 0,
+      monthlyExpenseBudget: Number(doc.monthlyExpenseBudget || 0),
     };
   } catch (err) {
     console.warn('Appwrite fetchSettings error:', err);
@@ -404,36 +423,47 @@ export async function fetchAppwriteSettings(userId?: string): Promise<UserSettin
 /**
  * Save UserSettings to Appwrite Cloud DB
  */
-export async function syncSaveAppwriteSettings(settings: UserSettings, userId?: string): Promise<boolean> {
-  if (!databases || !isAppwriteConfigured) return false;
+export async function syncSaveAppwriteSettings(
+  settings: UserSettings,
+  userId?: string
+): Promise<{ success: boolean; error?: string }> {
+  if (!databases || !isAppwriteConfigured) return { success: false, error: 'Appwrite tidak terkonfigurasi' };
+  
+  const docId = cleanAppwriteDocId(userId ? `settings_${userId}` : 'user_settings_global');
+  
+  const fullPayload: any = {
+    wallets: JSON.stringify(settings.wallets),
+    incomeTemplates: JSON.stringify(settings.incomeTemplates || []),
+    monthlyExpenseBudget: Number(settings.monthlyExpenseBudget || 0),
+  };
+  if (userId) fullPayload.userId = userId;
+
   try {
-    const docId = cleanAppwriteDocId(userId ? `settings_${userId}` : 'user_settings_global');
-    const payload: any = {
+    try {
+      await databases.updateDocument(APPWRITE_DATABASE_ID, COLLECTIONS.SETTINGS, docId, fullPayload);
+    } catch {
+      await databases.createDocument(APPWRITE_DATABASE_ID, COLLECTIONS.SETTINGS, docId, fullPayload);
+    }
+    return { success: true };
+  } catch (err1: any) {
+    console.warn('Full settings save failed, trying minimal payload:', err1);
+
+    const minimalPayload: any = {
       wallets: JSON.stringify(settings.wallets),
-      incomeTemplates: JSON.stringify(settings.incomeTemplates),
-      monthlyExpenseBudget: settings.monthlyExpenseBudget,
+      monthlyExpenseBudget: Number(settings.monthlyExpenseBudget || 0),
     };
-    if (userId) payload.userId = userId;
 
     try {
-      await databases.updateDocument(
-        APPWRITE_DATABASE_ID,
-        COLLECTIONS.SETTINGS,
-        docId,
-        payload
-      );
-    } catch {
-      await databases.createDocument(
-        APPWRITE_DATABASE_ID,
-        COLLECTIONS.SETTINGS,
-        docId,
-        payload
-      );
+      try {
+        await databases.updateDocument(APPWRITE_DATABASE_ID, COLLECTIONS.SETTINGS, docId, minimalPayload);
+      } catch {
+        await databases.createDocument(APPWRITE_DATABASE_ID, COLLECTIONS.SETTINGS, docId, minimalPayload);
+      }
+      return { success: true };
+    } catch (err2: any) {
+      console.error('Appwrite syncSaveSettings error:', err2);
+      return { success: false, error: err2.message || String(err2) };
     }
-    return true;
-  } catch (err) {
-    console.warn('Appwrite syncSaveSettings error:', err);
-    return false;
   }
 }
 

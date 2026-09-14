@@ -310,7 +310,12 @@ export default function Home() {
     setInvestments(updatedInvestments);
     
     if (isAppwriteConfigured) {
-      await syncSaveAppwriteInvestments(updatedInvestments, currentUser?.id);
+      const res = await syncSaveAppwriteInvestments(updatedInvestments, currentUser?.id);
+      if (res.success) {
+        showToast('Portofolio tersimpan ke Appwrite Database Cloud', 'success');
+      } else {
+        showToast(`Appwrite Sync: ${res.error || 'Gagal menyimpan portofolio'}`, 'warning');
+      }
     }
 
     const newScore = calculateFinancialLivingScore(transactions, updatedInvestments, settings);
@@ -326,11 +331,15 @@ export default function Home() {
     setSettings(updatedSettings);
 
     if (isAppwriteConfigured) {
-      const okTx = await syncSaveAppwriteTransaction(transaction, currentUser?.id);
-      const okSt = await syncSaveAppwriteSettings(updatedSettings, currentUser?.id);
-      if (okTx && okSt) {
+      const resTx = await syncSaveAppwriteTransaction(transaction, currentUser?.id);
+      const resSt = await syncSaveAppwriteSettings(updatedSettings, currentUser?.id);
+      if (resTx.success) {
         showToast('Transaksi tersimpan ke Appwrite Database Cloud', 'success');
+      } else {
+        showToast(`Appwrite Sync: ${resTx.error || 'Gagal menyimpan transaksi'}`, 'warning');
       }
+    } else {
+      showToast('Transaksi tersimpan di penyimpanan lokal', 'info');
     }
 
     const newScore = calculateFinancialLivingScore(updatedTxs, investments, updatedSettings);
@@ -355,14 +364,19 @@ export default function Home() {
         setSettings(updatedSettings);
 
         if (isAppwriteConfigured) {
-          await syncDeleteAppwriteTransaction(id);
+          const res = await syncDeleteAppwriteTransaction(id);
           await syncSaveAppwriteSettings(updatedSettings, currentUser?.id);
+          if (res.success) {
+            showToast('Transaksi berhasil dihapus dari Appwrite Database', 'success');
+          } else {
+            showToast(`Appwrite Sync: ${res.error || 'Gagal menghapus transaksi'}`, 'warning');
+          }
+        } else {
+          showToast('Transaksi berhasil dihapus', 'success');
         }
 
         const newScore = calculateFinancialLivingScore(updatedTxs, investments, updatedSettings);
         setScore(newScore);
-        
-        showToast('Transaksi berhasil dihapus dari Appwrite Database', 'success');
         setConfirmState(prev => ({ ...prev, isOpen: false }));
       }
     });
@@ -373,9 +387,11 @@ export default function Home() {
     saveStoredSettings(newSettings);
 
     if (isAppwriteConfigured) {
-      const ok = await syncSaveAppwriteSettings(newSettings, currentUser?.id);
-      if (ok) {
-        showToast('Pengaturan tersimpan ke Appwrite Database', 'success');
+      const res = await syncSaveAppwriteSettings(newSettings, currentUser?.id);
+      if (res.success) {
+        showToast('Pengaturan tersimpan ke Appwrite Database Cloud', 'success');
+      } else {
+        showToast(`Appwrite Sync: ${res.error || 'Gagal menyimpan pengaturan'}`, 'warning');
       }
     }
 
@@ -403,9 +419,11 @@ export default function Home() {
     setInvestments(updatedInvestments);
 
     if (isAppwriteConfigured) {
-      const ok = await syncSaveAppwriteInvestments(updatedInvestments, currentUser?.id);
-      if (ok) {
-        showToast('Portofolio tersimpan ke Appwrite Database', 'success');
+      const res = await syncSaveAppwriteInvestments(updatedInvestments, currentUser?.id);
+      if (res.success) {
+        showToast('Portofolio tersimpan ke Appwrite Database Cloud', 'success');
+      } else {
+        showToast(`Appwrite Sync: ${res.error || 'Gagal menyimpan portofolio'}`, 'warning');
       }
     }
 
